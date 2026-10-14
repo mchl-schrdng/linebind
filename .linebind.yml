@@ -1,0 +1,23 @@
+version: 1
+name: Linebind's own repository contract
+rules:
+  - id: public-entry-points
+    kind: require-files
+    reason: Contributors need the product, licensing, configuration and security entry points.
+    remediation: Restore the missing public document or propose a reviewed contract update.
+    files:
+      require: [README.md, LICENSE, SECURITY.md, docs/configuration.md, docs/trust-model.md]
+  - id: deliberate-direct-dependencies
+    kind: dependencies
+    reason: Keep the native verifier small and its direct dependencies explicit.
+    scope: [go.mod]
+    dependencies:
+      format: go
+      allow: [github.com/bmatcuk/doublestar/v4, go.yaml.in/yaml/v3, golang.org/x/mod]
+  - id: pure-native-contract-package
+    kind: forbid-text
+    reason: Native contract evaluation inspects captured bytes without running project code or accessing the network.
+    remediation: Keep side effects in the repository or application layer. This is a lexical check, including comments and strings.
+    scope: [internal/contract/*.go]
+    text:
+      pattern: 'exec\.Command|http\.(Get|Post|Do)|os\.(ReadFile|Open|WriteFile)\('

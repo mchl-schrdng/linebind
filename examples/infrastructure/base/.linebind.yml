@@ -1,0 +1,11 @@
+version: 1
+name: Orders workload security declaration
+rules:
+  - id: infrastructure.non-root
+    kind: document
+    reason: This deployment must explicitly request non-root containers at pod level.
+    scope: [deployment.yml]
+    document:
+      selector: /spec/template/spec/securityContext/runAsNonRoot
+      equals: true
+    remediation: Restore runAsNonRoot at pod level and review container-level overrides separately.

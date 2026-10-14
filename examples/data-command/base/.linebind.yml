@@ -1,0 +1,15 @@
+version: 1
+name: Orders transformation result
+rules:
+  - id: data.order-key-invariant
+    kind: command
+    reason: The SQL transformation must return nonempty rows with unique, non-null order_id values on the approved test dataset.
+    scope: [transform.sql]
+    command:
+      argv: [python3, -I, -B, checks/check_orders.py]
+      timeout: 10
+      success-codes: [0]
+      failure-codes: [1]
+      format: exit
+      policy-files: [checks/check_orders.py, checks/orders.csv]
+    remediation: Correct transform.sql so the approved fixture produces unique, non-null order keys; review changes to the checker or dataset separately.

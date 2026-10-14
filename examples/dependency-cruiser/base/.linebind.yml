@@ -1,0 +1,22 @@
+version: 1
+name: Frontend dependency boundaries
+rules:
+  - id: javascript-syntax
+    kind: command
+    reason: Validate syntax before trusting a graph built with parser recovery.
+    scope: ["src/**/*.mjs"]
+    remediation: Fix the JavaScript syntax error reported by Node.
+    command:
+      argv: [node, scripts/check-syntax.mjs]
+      timeout: 30
+      policy-files: [scripts/check-syntax.mjs]
+  - id: client-boundary
+    kind: command
+    reason: Client code accesses domain data through the API module.
+    scope: ["src/**/*.mjs"]
+    remediation: Import the API module instead of reaching directly into domain.
+    command:
+      argv: [depcruise, --config, rules.cjs, --output-type, json, src]
+      format: dependency-cruiser
+      timeout: 30
+      policy-files: [rules.cjs]

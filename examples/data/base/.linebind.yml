@@ -1,0 +1,11 @@
+version: 1
+name: Orders table schema declaration
+rules:
+  - id: data.order-id-not-null
+    kind: document
+    reason: The published orders schema declares order_id as non-null for downstream joins.
+    scope: [orders.schema.json]
+    document:
+      selector: /columns/order_id/nullable
+      equals: false
+    remediation: Keep the non-null declaration; validate actual datasets with a separate data test.

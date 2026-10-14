@@ -1,0 +1,7 @@
+{
+  "table": "orders",
+  "columns": {
+    "order_id": {"type": "integer", "nullable": false},
+    "customer_id": {"type": "integer", "nullable": false}
+  }
+}

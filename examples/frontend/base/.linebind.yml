@@ -1,0 +1,12 @@
+version: 1
+name: Frontend runtime dependencies
+rules:
+  - id: frontend.runtime-dependencies
+    kind: dependencies
+    reason: The browser bundle uses React; new runtime packages require a separate decision.
+    scope: [package.json]
+    dependencies:
+      format: npm
+      sections: [dependencies]
+      allow: [react, react-dom]
+    remediation: Remove the new runtime dependency or propose a reviewed contract change.

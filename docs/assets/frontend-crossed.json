@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "version": "dev",
+  "repository": "frontend",
+  "base": "c2477455257d2095a382399c854842c340fede4f",
+  "candidate": "worktree:c2477455257d2095a382399c854842c340fede4f:9f3e56ac78a0",
+  "input_digest": "9f3e56ac78a06148b3ca2a09ec07a8cc68e95f3a8bea4344c4f810f0b0b00272",
+  "contract_path": ".linebind.yml",
+  "contract_hash": "32bc7d76fe9e144de12c4a68cf70312dcfd22bddc06fcbfba4ea54a38ecbcd0a",
+  "generated_at": "2026-10-14T19:45:36Z",
+  "status": "crossed",
+  "exit_code": 1,
+  "contract_changes": [],
+  "checks": [
+    {
+      "id": "frontend.runtime-dependencies",
+      "kind": "dependencies",
+      "reason": "The browser bundle uses React; new runtime packages require a separate decision.",
+      "required": true,
+      "status": "crossed",
+      "evidence": "native",
+      "scope": [
+        "package.json"
+      ],
+      "files": 1,
+      "duration_ms": 0,
+      "findings": [
+        {
+          "fingerprint": "91c74d9c40946572b00f3065b3c39a63655456025ec33929d54d39821776eafa",
+          "path": "package.json",
+          "target": "jquery",
+          "message": "Direct dependency is not permitted: jquery",
+          "remediation": "Remove the new runtime dependency or propose a reviewed contract change.",
+          "evolution": "not_comparable"
+        }
+      ],
+      "diagnostics": []
+    }
+  ],
+  "diagnostics": []
+}
