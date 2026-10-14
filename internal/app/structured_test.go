@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -91,12 +92,21 @@ func TestDependencyResultsRequireCompleteCoverage(t *testing.T) {
 func TestConftestResultsRequireEvaluatedPolicies(t *testing.T) {
 	rule := adapterRule()
 	rule.Command.Format = "conftest"
+	root := t.TempDir()
+	absolutePath, err := json.Marshal(filepath.Join(root, "data.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	outsidePath, err := json.Marshal(filepath.Join(t.TempDir(), "data.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, data := range []string{
 		`[{"filename":"data.yaml","namespace":"main","successes":1}]`,
-		`[{"filename":"/snapshot/data.yaml","namespace":"main","successes":0,"failures":[{"msg":"forbidden","metadata":{"query":"data.main.deny"}}]}]`,
+		`[{"filename":` + string(absolutePath) + `,"namespace":"main","successes":0,"failures":[{"msg":"forbidden","metadata":{"query":"data.main.deny"}}]}]`,
 		`[{"filename":"./data.yaml","namespace":"main","successes":0,"warnings":[{"msg":"warning"}]}]`,
 	} {
-		if _, err := conftestFindings(rule, []byte(data), "/snapshot", []string{"data.yaml"}); err != nil {
+		if _, err := conftestFindings(rule, []byte(data), root, []string{"data.yaml"}); err != nil {
 			t.Fatalf("real result shape rejected: %s: %v", data, err)
 		}
 	}
@@ -107,17 +117,18 @@ func TestConftestResultsRequireEvaluatedPolicies(t *testing.T) {
 		`[{"filename":"data.yaml","namespace":"main","successes":1,"successes":0}]`,
 		`[{"filename":"other.yaml","namespace":"main","successes":1}]`,
 		`[{"filename":"../data.yaml","namespace":"main","successes":1}]`,
+		`[{"filename":` + string(outsidePath) + `,"namespace":"main","successes":1}]`,
 		`[{"filename":"data.yaml","namespace":"main","successes":1,"exceptions":[{"msg":"waived"}]}]`,
 		`[{"filename":"data.yaml","namespace":"main","successes":1,"skipped":[{"msg":"unsupported"}]}]`,
 		`[{"filename":"data.yaml","namespace":"main","successes":0,"failures":[{"msg":""}]}]`,
 		`[{"filename":"data.yaml","namespace":"main","successes":1},{"filename":"data.yaml","namespace":"main","successes":1}]`,
 	} {
-		if _, err := conftestFindings(rule, []byte(data), "/snapshot", []string{"data.yaml"}); err == nil {
+		if _, err := conftestFindings(rule, []byte(data), root, []string{"data.yaml"}); err == nil {
 			t.Errorf("incomplete result passed: %s", data)
 		}
 	}
 	data := []byte(`[{"filename":"data.yaml","namespace":"main","successes":1}]`)
-	if _, err := conftestFindings(rule, data, "/snapshot", []string{"data.yaml", "other.yaml"}); err == nil {
+	if _, err := conftestFindings(rule, data, root, []string{"data.yaml", "other.yaml"}); err == nil {
 		t.Fatal("unanalysed file omitted silently")
 	}
 }
