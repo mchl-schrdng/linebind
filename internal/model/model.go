@@ -29,7 +29,7 @@ type Check struct {
 	Kind        string    `json:"kind"`
 	Reason      string    `json:"reason"`
 	Required    bool      `json:"required"`
-	Status      string    `json:"status"` // passed, crossed, unverified
+	Status      string    `json:"status"`   // passed, crossed, unverified
 	Evidence    string    `json:"evidence"` // native, structured, command
 	Scope       []string  `json:"scope"`
 	Files       int       `json:"files"`
