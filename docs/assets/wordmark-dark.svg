@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 44" fill="none" role="img" aria-label="Linebind">
+  <g stroke="#f6f5f1" stroke-width="2.7" stroke-linecap="square" stroke-linejoin="miter"><path d="M12 10H6V34H12M24 10H30V34H24M1.5 22H34.5"/></g>
+  <g stroke="#f6f5f1" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M49 9V34M60 19V34M71 34V19M71 25C71 16 85 16 85 25V34M110 30C107 37 94 36 94 26C94 16 110 16 110 25H95M120 9V34M120 26C120 16 136 16 136 26C136 37 120 37 120 26M146 19V34M157 34V19M157 25C157 16 171 16 171 25V34M197 9V34M197 26C197 16 181 16 181 26C181 37 197 37 197 26"/>
+  </g>
+  <g fill="#f6f5f1"><circle cx="60" cy="11" r="1.75"/><circle cx="146" cy="11" r="1.75"/></g>
+</svg>

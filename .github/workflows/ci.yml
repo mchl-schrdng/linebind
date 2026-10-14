@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_call:
+    inputs:
+      version:
+        description: Stable version to build into the test archives
+        type: string
+        default: v0.0.0
+
+permissions:
+  contents: read
+
+env:
+  CGO_ENABLED: '0'
+  GOTOOLCHAIN: local
+  VERSION: ${{ inputs.version || 'v0.0.0' }}
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.2'
+      - name: Build all six release archives
+        run: go run ./scripts/package -version "$VERSION" -commit "$GITHUB_SHA" -out "$RUNNER_TEMP/linebind-packages"
+      - name: Verify checksums
+        working-directory: ${{ runner.temp }}/linebind-packages
+        run: sha256sum --check SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: linebind-packages
+          path: ${{ runner.temp }}/linebind-packages/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  verify:
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.2'
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [[ -n "$unformatted" ]]; then
+            printf '%s\n' "$unformatted"
+            exit 1
+          fi
+      - run: go test ./...
+      - run: go vet ./...
+      - name: Install from source
+        env:
+          GOBIN: ${{ runner.temp }}/linebind-installed
+        run: go install -trimpath -buildvcs=false -ldflags "-X main.version=$VERSION -X main.commit=$GITHUB_SHA" ./cmd/linebind
+      - name: Smoke test installed binary outside the checkout
+        run: go run ./scripts/smoke -binary "$RUNNER_TEMP/linebind-installed/linebind" -version "$VERSION"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: linebind-packages
+          path: ${{ runner.temp }}/linebind-packages
+      - name: Extract Unix archive
+        if: runner.os != 'Windows'
+        run: |
+          mkdir "$RUNNER_TEMP/linebind-extracted"
+          archive="$RUNNER_TEMP/linebind-packages/linebind_${VERSION#v}_$(go env GOOS)_$(go env GOARCH).tar.gz"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/linebind-extracted"
+      - name: Extract Windows archive
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $arch = go env GOARCH
+          $number = $env:VERSION.TrimStart('v')
+          Expand-Archive -LiteralPath "$env:RUNNER_TEMP/linebind-packages/linebind_${number}_windows_${arch}.zip" -DestinationPath "$env:RUNNER_TEMP/linebind-extracted"
+      - name: Smoke test extracted binary outside the checkout
+        run: go run ./scripts/smoke -binary "$RUNNER_TEMP/linebind-extracted/linebind" -version "$VERSION"
+      - name: Run synthetic examples against the extracted binary
+        run: go run ./scripts/pilots -binary "$RUNNER_TEMP/linebind-extracted/linebind" -out "$RUNNER_TEMP/linebind-examples"
+
+  minimum-go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.9'
+      - run: go test ./...
+
+  external-tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.2'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install the declared external tool versions
+        run: |
+          mkdir -p "$RUNNER_TEMP/linebind-tools"
+          npm install --prefix "$RUNNER_TEMP/linebind-tools" --ignore-scripts --no-audit --no-fund dependency-cruiser@17.3.8 jsdom@26.1.0
+          curl --fail --silent --show-error --location https://github.com/open-policy-agent/conftest/releases/download/v0.62.0/conftest_0.62.0_Linux_x86_64.tar.gz -o "$RUNNER_TEMP/linebind-tools/conftest.tar.gz"
+          printf '284231908e4cf66d156e5577c3eee2f67d9f2edf2521fa2309e0df1969f871e5  %s\n' "$RUNNER_TEMP/linebind-tools/conftest.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/linebind-tools/conftest.tar.gz" -C "$RUNNER_TEMP/linebind-tools" conftest
+      - name: Exercise adapters against the real tools
+        env:
+          CGO_ENABLED: '1'
+          LINEBIND_CONFTEST: ${{ runner.temp }}/linebind-tools/conftest
+          LINEBIND_DEPCRUISE: ${{ runner.temp }}/linebind-tools/node_modules/.bin/depcruise
+        run: go test -race ./internal/app -run '^TestReal' -v
+      - name: Exercise actual SQLite rows through the installed CLI
+        env:
+          GOBIN: ${{ runner.temp }}/linebind-data-installed
+        run: |
+          python3 --version
+          go install -trimpath -buildvcs=false ./cmd/linebind
+          go run ./scripts/pilots -binary "$GOBIN/linebind" -data-command -out "$RUNNER_TEMP/linebind-data-examples"
+      - name: Test report interactions without browser or network access
+        env:
+          NODE_PATH: ${{ runner.temp }}/linebind-tools/node_modules
+        run: node scripts/ui-test.mjs "$RUNNER_TEMP/linebind-data-installed/linebind"

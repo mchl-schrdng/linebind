@@ -1,0 +1,13 @@
+version: 1
+name: Kubernetes workload policy
+rules:
+  - id: no-privileged-containers
+    kind: command
+    reason: Workloads must not enable privileged containers.
+    scope: ["infra/**/*.yaml"]
+    remediation: Remove privileged mode or set securityContext.privileged to false.
+    command:
+      argv: [conftest, test, infra, --policy, policy, --output, json]
+      format: conftest
+      timeout: 30
+      policy-files: [policy/main.rego]

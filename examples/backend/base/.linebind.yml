@@ -1,0 +1,11 @@
+version: 1
+name: Orders API response declaration
+rules:
+  - id: backend.orders-response
+    kind: document
+    reason: Existing clients expect the documented GET /orders success response to remain present.
+    scope: [openapi.yml]
+    document:
+      selector: /paths/~1orders/get/responses/200
+      required: true
+    remediation: Restore the documented 200 response or separately review this API decision.

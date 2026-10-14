@@ -1,0 +1,10 @@
+openapi: 3.0.3
+info:
+  title: Orders fixture
+  version: 1.0.0
+paths:
+  /orders:
+    get:
+      responses:
+        '201':
+          description: A different response replaces the existing declaration
