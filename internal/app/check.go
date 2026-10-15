@@ -191,29 +191,39 @@ func markOmissions(rule contract.Rule, s *repository.Snapshot, c *model.Check) {
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		for _, pattern := range patterns {
-			matches, err := contract.Match(pattern, name)
-			// A symlink or submodule can hide a directory. Matching only its own
-			// name would silently miss files beneath a declared glob.
-			if strings.Contains(s.Omitted[name], "symlink") {
-				prefix := pattern
-				if i := strings.IndexAny(prefix, "*?[{"); i >= 0 {
-					prefix = prefix[:i]
-					if slash := strings.LastIndex(prefix, "/"); slash >= 0 {
-						prefix = prefix[:slash]
-					} else {
-						prefix = ""
-					}
+		if !omissionMatches(name, s.Omitted[name], patterns) {
+			continue
+		}
+		if rule.Files != nil && len(rule.Scope) > 0 && !omissionMatches(name, s.Omitted[name], rule.Scope) {
+			continue
+		}
+		c.Status = "unverified"
+		c.Diagnostics = append(c.Diagnostics, fmt.Sprintf("%s: %s", name, s.Omitted[name]))
+	}
+}
+
+func omissionMatches(name, detail string, patterns []string) bool {
+	for _, pattern := range patterns {
+		matches, err := contract.Match(pattern, name)
+		// A symlink or submodule can hide a directory. Matching only its own
+		// name would silently miss files beneath a declared glob.
+		if strings.Contains(detail, "symlink") {
+			prefix := pattern
+			if i := strings.IndexAny(prefix, "*?[{"); i >= 0 {
+				prefix = prefix[:i]
+				if slash := strings.LastIndex(prefix, "/"); slash >= 0 {
+					prefix = prefix[:slash]
+				} else {
+					prefix = ""
 				}
-				matches = matches || prefix == "" || name == prefix || strings.HasPrefix(name, prefix+"/") || strings.HasPrefix(prefix, name+"/")
 			}
-			if err != nil || matches {
-				c.Status = "unverified"
-				c.Diagnostics = append(c.Diagnostics, fmt.Sprintf("%s: %s", name, s.Omitted[name]))
-				break
-			}
+			matches = matches || prefix == "" || name == prefix || strings.HasPrefix(name, prefix+"/") || strings.HasPrefix(prefix, name+"/")
+		}
+		if err != nil || matches {
+			return true
 		}
 	}
+	return false
 }
 
 func compare(current *model.Check, base model.Check) {

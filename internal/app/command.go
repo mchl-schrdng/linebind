@@ -250,9 +250,10 @@ func dependencyFindings(rule contract.Rule, data []byte, root string, files map[
 			Info         *int                       `json:"info"`
 			OptionsUsed  map[string]json.RawMessage `json:"optionsUsed"`
 			RuleSetUsed  struct {
-				Forbidden []json.RawMessage `json:"forbidden"`
-				Required  []json.RawMessage `json:"required"`
-				Allowed   []json.RawMessage `json:"allowed"`
+				Forbidden       []json.RawMessage `json:"forbidden"`
+				Required        []json.RawMessage `json:"required"`
+				Allowed         []json.RawMessage `json:"allowed"`
+				AllowedSeverity string            `json:"allowedSeverity"`
 			} `json:"ruleSetUsed"`
 			Violations *[]struct {
 				From string `json:"from"`
@@ -276,17 +277,38 @@ func dependencyFindings(rule contract.Rule, data []byte, root string, files map[
 		return nil, fmt.Errorf("missing or inconsistent dependency summary")
 	}
 	activeRules := 0
-	for _, rules := range [][]json.RawMessage{summary.RuleSetUsed.Forbidden, summary.RuleSetUsed.Required, summary.RuleSetUsed.Allowed} {
+	for _, rules := range [][]json.RawMessage{summary.RuleSetUsed.Forbidden, summary.RuleSetUsed.Required} {
 		for _, raw := range rules {
 			var identity struct {
+				Name     string `json:"name"`
 				Severity string `json:"severity"`
 			}
-			if err := json.Unmarshal(raw, &identity); err != nil {
+			if err := decodeOutput(raw, &identity); err != nil {
 				return nil, err
+			}
+			if strings.TrimSpace(identity.Name) == "" || !slices.Contains([]string{"error", "warn", "info", "ignore"}, identity.Severity) {
+				return nil, fmt.Errorf("reported dependency rule lacks a name or recognized severity")
 			}
 			if identity.Severity != "ignore" {
 				activeRules++
 			}
+		}
+	}
+	// dependency-cruiser omits names from allowed rules and records their
+	// shared severity separately; do not apply the named-rule schema to them.
+	for _, raw := range summary.RuleSetUsed.Allowed {
+		var allowed struct {
+			From map[string]json.RawMessage `json:"from"`
+			To   map[string]json.RawMessage `json:"to"`
+		}
+		if err := decodeOutput(raw, &allowed); err != nil {
+			return nil, err
+		}
+		if allowed.From == nil || allowed.To == nil || !slices.Contains([]string{"error", "warn", "info", "ignore"}, summary.RuleSetUsed.AllowedSeverity) {
+			return nil, fmt.Errorf("reported allowed rule lacks restrictions or a recognized allowedSeverity")
+		}
+		if summary.RuleSetUsed.AllowedSeverity != "ignore" {
+			activeRules++
 		}
 	}
 	if activeRules == 0 {

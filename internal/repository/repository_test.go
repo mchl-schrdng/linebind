@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -19,14 +20,74 @@ func TestGitOutputBoundCannotBeBypassedByCopy(t *testing.T) {
 }
 
 func gitTest(t *testing.T, dir string, args ...string) string {
+	return gitTestInput(t, dir, nil, args...)
+}
+
+func gitTestInput(t *testing.T, dir string, input io.Reader, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
+	cmd.Stdin = input
 	cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=Test", "GIT_AUTHOR_EMAIL=test@example.invalid", "GIT_COMMITTER_NAME=Test", "GIT_COMMITTER_EMAIL=test@example.invalid")
 	b, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("git %v: %v %s", args, err, b)
 	}
 	return strings.TrimSpace(string(b))
+}
+
+// Reuse one blob under many paths to exercise capture limits without creating
+// hundreds of MiB of fixture files on disk.
+func repeatedBlobCommit(t *testing.T, dir, mode string, size, count int) string {
+	t.Helper()
+	hash := gitTestInput(t, dir, strings.NewReader(strings.Repeat("x", size)), "hash-object", "-w", "--stdin")
+	var entries strings.Builder
+	fmt.Fprintf(&entries, "100644 blob %s\tcode.txt\x00", gitTest(t, dir, "rev-parse", "HEAD:code.txt"))
+	for i := 0; i < count; i++ {
+		fmt.Fprintf(&entries, "%s blob %s\tinput-%05d\x00", mode, hash, i)
+	}
+	tree := gitTestInput(t, dir, strings.NewReader(entries.String()), "mktree", "-z")
+	return gitTest(t, dir, "commit-tree", tree, "-p", "HEAD", "-m", "capture limit fixture")
+}
+
+func TestCommitSkipsOversizedContentBeforeReadingBlobs(t *testing.T) {
+	dir := fixture(t)
+	// The old batch read exceeded 136 MiB before it could mark these files omitted.
+	const count = 35
+	commit := repeatedBlobCommit(t, dir, "100644", MaxFileBytes+1, count)
+	r, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	snapshot, err := r.Commit(commit)
+	if err != nil {
+		t.Fatalf("oversized files prevented capture of unrelated source: %v", err)
+	}
+	if len(snapshot.Files) != 1 || string(snapshot.Files["code.txt"]) != "original\n" || len(snapshot.Omitted) != count {
+		t.Fatalf("lost source or omitted files: files=%d omissions=%d", len(snapshot.Files), len(snapshot.Omitted))
+	}
+}
+
+func TestCommitLimitsIncludeOmittedPathsAndCapturedBytes(t *testing.T) {
+	for _, tc := range []struct {
+		name, mode, diagnostic string
+		size, count            int
+	}{
+		{"omitted paths", "120000", "files", 1, MaxFiles},
+		{"captured bytes", "100644", "bytes", MaxFileBytes, MaxTotalBytes / MaxFileBytes},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := fixture(t)
+			// code.txt makes each case exceed the exact limit by one input.
+			commit := repeatedBlobCommit(t, dir, tc.mode, tc.size, tc.count)
+			r, err := Open(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := r.Commit(commit); err == nil || !strings.Contains(err.Error(), tc.diagnostic) {
+				t.Fatalf("capture limit was not enforced: %v", err)
+			}
+		})
+	}
 }
 
 func fixture(t *testing.T) string {

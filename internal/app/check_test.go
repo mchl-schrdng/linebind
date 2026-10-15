@@ -187,3 +187,89 @@ func TestCheckoutLineEndingsDoNotMoveThePolicy(t *testing.T) {
 		t.Fatalf("comment change hidden: %+v", r)
 	}
 }
+
+func TestRequiredFileOmissionsRespectExplicitScope(t *testing.T) {
+	rule := contract.Rule{Scope: []string{"public/*.md"}, Files: &contract.FilesRule{Require: []string{"**/*.md"}}}
+	for _, tc := range []struct{ omitted, want string }{
+		{"private/link.md", "passed"},
+		{"private", "passed"},
+		{"public/link.md", "unverified"},
+		{"public", "unverified"},
+	} {
+		t.Run(tc.omitted, func(t *testing.T) {
+			c := model.Check{Status: "passed", Files: 1}
+			s := &repository.Snapshot{Omitted: map[string]string{tc.omitted: "symlinks and submodules are not inspected"}}
+			markOmissions(rule, s, &c)
+			if c.Status != tc.want {
+				t.Fatalf("omitted %s: want %s, got %+v", tc.omitted, tc.want, c)
+			}
+		})
+	}
+	rule.Files.Require = []string{"public/README.md"}
+	c := model.Check{Status: "passed", Files: 1}
+	markOmissions(rule, &repository.Snapshot{Omitted: map[string]string{"public/optional.md": "file exceeds capture limit"}}, &c)
+	if c.Status != "passed" {
+		t.Fatalf("unrequired file affected presence evidence: %+v", c)
+	}
+}
+
+func TestDocumentNewComparisonIgnoresIntegerFormatting(t *testing.T) {
+	policy := `version: 1
+name: Values
+rules:
+  - id: value
+    kind: document
+    reason: Do not add forbidden values.
+    scope: [config.yaml]
+    compare: new
+    document:
+      selector: /mode
+      forbidden-values: [80, 81, "80"]
+`
+	dir, opt := checkRepo(t, policy, "allowed\n")
+	put(t, dir, "config.yaml", "mode: 0x50\n")
+	testGit(t, dir, "add", ".")
+	testGit(t, dir, "commit", "-qm", "existing forbidden value")
+	opt.Base = "HEAD"
+	for _, tc := range []struct{ value, evolution string }{{"80", "existing"}, {"81", "new"}, {`"80"`, "new"}} {
+		put(t, dir, "config.yaml", "mode: "+tc.value+"\n")
+		r := Check(opt)
+		if len(r.Checks) != 1 || len(r.Checks[0].Findings) == 0 || r.Checks[0].Findings[0].Evolution != tc.evolution {
+			t.Fatalf("value %s: %+v", tc.value, r)
+		}
+		if (r.ExitCode == 0) != (tc.evolution == "existing") {
+			t.Fatalf("value %s produced the wrong gate: %+v", tc.value, r)
+		}
+	}
+}
+
+func TestRoundedDocumentValuesCannotPassNewComparison(t *testing.T) {
+	policy := `version: 1
+name: Numeric comparison
+rules:
+  - id: value
+    kind: document
+    reason: Values must remain explicit.
+    scope: [config.json]
+    compare: new
+    document:
+      selector: /mode
+      equals: safe
+`
+	for _, pair := range [][2]string{
+		{"18446744073709551616", "18446744073709551617"},
+		{"0.100000000000000001", "0.100000000000000002"},
+	} {
+		dir, opt := checkRepo(t, policy, "allowed\n")
+		put(t, dir, "config.json", `{"mode":`+pair[0]+`}`)
+		testGit(t, dir, "add", ".")
+		testGit(t, dir, "commit", "-qm", "numeric baseline")
+		opt.Base = "HEAD"
+		put(t, dir, "config.json", `{"mode":`+pair[1]+`}`)
+		for _, evaluate := range []func(Options) model.Report{Check, Preview} {
+			if got := evaluate(opt); got.ExitCode != 2 || got.Status != "unverified" {
+				t.Errorf("rounded %v must not establish comparison: %+v", pair, got)
+			}
+		}
+	}
+}

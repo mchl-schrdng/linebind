@@ -84,17 +84,25 @@ func (r *Repository) Commit(ref string) (*Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	tree, err := r.git(nil, 16<<20, "ls-tree", "-r", "-z", "--full-tree", sha)
+	tree, err := r.git(nil, 16<<20, "ls-tree", "-r", "-l", "-z", "--full-tree", sha)
 	if err != nil {
 		return nil, err
 	}
 	s := emptySnapshot(sha)
-	type blob struct{ name, hash string }
+	type blob struct {
+		name, hash string
+		size       int
+	}
 	var blobs []blob
 	var input bytes.Buffer
+	entries, total := 0, 0
 	for _, entry := range bytes.Split(tree, []byte{0}) {
 		if len(entry) == 0 {
 			continue
+		}
+		entries++
+		if entries > MaxFiles {
+			return nil, fmt.Errorf("snapshot exceeds %d files", MaxFiles)
 		}
 		parts := bytes.SplitN(entry, []byte{'\t'}, 2)
 		if len(parts) != 2 {
@@ -105,19 +113,28 @@ func (r *Repository) Commit(ref string) (*Snapshot, error) {
 			return nil, fmt.Errorf("unsupported repository path %q", name)
 		}
 		meta := strings.Fields(string(parts[0]))
-		if len(meta) != 3 {
+		if len(meta) != 4 {
 			return nil, fmt.Errorf("invalid Git tree metadata")
 		}
 		if meta[0] != "100644" && meta[0] != "100755" {
 			s.Omitted[name] = "symlinks and submodules are not inspected"
 			continue
 		}
-		blobs = append(blobs, blob{name, meta[2]})
+		size, err := strconv.Atoi(meta[3])
+		if err != nil || size < 0 || meta[1] != "blob" {
+			return nil, fmt.Errorf("invalid Git blob metadata")
+		}
+		if size > MaxFileBytes {
+			s.Omitted[name] = fmt.Sprintf("file exceeds %d bytes", MaxFileBytes)
+			continue
+		}
+		total += size
+		if total > MaxTotalBytes {
+			return nil, fmt.Errorf("snapshot exceeds %d bytes", MaxTotalBytes)
+		}
+		blobs = append(blobs, blob{name, meta[2], size})
 		s.Executable[name] = meta[0] == "100755"
 		fmt.Fprintln(&input, meta[2])
-	}
-	if len(blobs) > MaxFiles {
-		return nil, fmt.Errorf("snapshot exceeds %d files", MaxFiles)
 	}
 	if len(blobs) > 0 {
 		data, err := r.git(input.Bytes(), MaxTotalBytes+(8<<20), "cat-file", "--batch")
@@ -125,7 +142,6 @@ func (r *Repository) Commit(ref string) (*Snapshot, error) {
 			return nil, fmt.Errorf("read Git blobs: %w", err)
 		}
 		reader := bufio.NewReader(bytes.NewReader(data))
-		total := 0
 		for _, blob := range blobs {
 			header, err := reader.ReadString('\n')
 			if err != nil {
@@ -136,19 +152,8 @@ func (r *Repository) Commit(ref string) (*Snapshot, error) {
 				return nil, fmt.Errorf("invalid blob response for %s", blob.name)
 			}
 			size, err := strconv.Atoi(parts[2])
-			if err != nil || size < 0 {
+			if err != nil || size != blob.size {
 				return nil, fmt.Errorf("invalid blob size")
-			}
-			if size > MaxFileBytes {
-				s.Omitted[blob.name] = fmt.Sprintf("file exceeds %d bytes", MaxFileBytes)
-				if _, err := io.CopyN(io.Discard, reader, int64(size)+1); err != nil {
-					return nil, err
-				}
-				continue
-			}
-			total += size
-			if total > MaxTotalBytes {
-				return nil, fmt.Errorf("snapshot exceeds %d bytes", MaxTotalBytes)
 			}
 			content := make([]byte, size)
 			if _, err := io.ReadFull(reader, content); err != nil {

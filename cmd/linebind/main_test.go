@@ -84,6 +84,21 @@ func TestCLIInitCheckAndOfflineReport(t *testing.T) {
 	cli(t, 2, "check", "--repo", dir)
 	cli(t, 2, "check", "--repo", dir, "--base", "HEAD", "--format", "json", "--agent")
 }
+
+func TestInitRejectsContractCollidingWithGitignore(t *testing.T) {
+	for _, name := range []string{".gitignore", ".GITIGNORE", ".gitignore/contract.yml"} {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			git(t, dir, "init", "-q")
+			cli(t, 2, "init", "--repo", dir, "--contract", name)
+			entries, err := os.ReadDir(dir)
+			if err != nil || len(entries) != 1 || entries[0].Name() != ".git" {
+				t.Fatalf("rejected init changed the repository: %v, %v", entries, err)
+			}
+		})
+	}
+}
+
 func TestOutputsRefuseSourceAndValidateReportSchema(t *testing.T) {
 	dir := t.TempDir()
 	source := filepath.Join(dir, "source.txt")

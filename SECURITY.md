@@ -23,5 +23,5 @@ Treat report evidence and tool output as untrusted content.
 
 Release archives include SHA-256 checksums to detect corruption. Checksums served
 beside an archive do not independently authenticate the publisher. Download both
-from this repository's GitHub releases. v0.1.0 does not provide signed release
+from this repository's GitHub releases. Releases do not provide signed release
 attestations, macOS notarization or Windows Authenticode signatures.

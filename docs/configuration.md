@@ -3,7 +3,8 @@
 Linebind reads a versioned YAML contract. The default path is `.linebind.yml`;
 `--contract` selects another repository-relative path. `validate` checks the
 local file's syntax and schema. `check` evaluates the contract stored in the
-chosen base revision.
+chosen base revision. `preview` evaluates the candidate's proposed contract
+against the same comparison base; policy edits alone do not fail it.
 
 ```yaml
 version: 1
@@ -137,6 +138,14 @@ Objects and arrays are not accepted as `equals` or forbidden values. File
 extensions must be `.json`, `.yaml` or `.yml`. Invalid documents, unsupported
 YAML constructs and duplicate keys produce diagnostics.
 
+Numbers must retain their decimal value when decoded; silent rounding is not
+accepted as equality. Floating-point literals must be finite and at most 1 KiB;
+any explicit decimal exponent must be between -400 and 400. Ordinary values
+such as `0.1` are supported; arbitrary precision is not. These parser limits
+apply to the whole document, including unselected fields. Unsupported numbers
+make a document check unverified or a contract invalid. Quote a numeric-looking
+value only when it is intended to be a string.
+
 The rule checks committed configuration, not an effective deployment, a
 running service or actual dataset rows. It is not a complete JSON Schema,
 OpenAPI or Kubernetes validator.
@@ -171,7 +180,7 @@ Tools must already be available on `PATH`; Linebind does not install them.
 | `format` | `exit`, `dependency-cruiser` or `conftest`; defaults to `exit`. |
 | `success-codes` | `[0]`; at least one code is required. |
 | `failure-codes` | `[1]`; may be empty. |
-| `policy-files` | Exact repository-relative files to load from the base, without globs. |
+| `policy-files` | Exact repository-relative files from the effective policy source: base for `check`, candidate for `preview`; no globs. |
 
 Success and failure codes must be distinct integers from 0 through 255.
 An unexpected exit, timeout, output overflow or malformed structured response
@@ -179,7 +188,8 @@ is unverified.
 
 `scope` declares the inputs the check covers. The command receives a disposable
 copy of the captured repository, not just the matched files. Listed
-`policy-files` are replaced by their base versions before execution. Include
+`policy-files` use their base versions in `check` and candidate versions in
+`preview`. Include
 the configuration, policy and helper files that define the check. Unlisted
 files are candidate content; Linebind does not discover transitive policy
 dependencies for you.
@@ -211,8 +221,9 @@ and [Conftest](../examples/conftest/README.md).
 `compare: strict` reports every current violation. Its findings have evolution
 `not_comparable`; it does not compute a before/after classification.
 
-`compare: new` evaluates the base and candidate using the same base rule. It
-matches findings by fingerprint, preserving the number of occurrences:
+`compare: new` evaluates both snapshots using the same effective rule: the base
+rule for `check`, the proposed rule for `preview`. It matches findings by
+fingerprint, preserving the number of occurrences:
 
 - A matching occurrence is `existing`.
 - An additional occurrence is `new` and crosses the check.
@@ -221,7 +232,7 @@ matches findings by fingerprint, preserving the number of occurrences:
 A check with only existing or resolved findings passes under this mode. It is
 not evidence that existing debt is acceptable forever. If either analysis is
 incomplete, findings cannot be reliably classified and the comparison is
-unverified. There is no separately editable baseline file in v0.1.0.
+unverified. There is no separately editable baseline file.
 
 Native fingerprints include the rule's predicate, file and relevant evidence.
 Text identities include the matched line context and occurrence; line-number
@@ -241,11 +252,13 @@ required/advisory setting. The [README](../README.md#read-the-result-correctly)
 explains check statuses and exit codes.
 
 ```text
+linebind setup --agent codex|claude|antigravity|all [--repo DIR] [--dry-run]
 linebind init [--repo DIR] [--contract .linebind.yml]
 linebind validate [--repo DIR] [--contract .linebind.yml]
 linebind check --base REF [--head REF|worktree] [--repo DIR]
                [--contract .linebind.yml] [--format text|json]
                [--agent] [--output PATH] [--html PATH] [--allow-exec]
+linebind preview --base REF [same options as check]
 linebind report INPUT.json [--output .linebind/report.html]
 ```
 
