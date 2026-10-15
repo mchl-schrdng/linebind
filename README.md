@@ -48,7 +48,7 @@ comes from the checks you actually declare.
 
 ## What can a contract check?
 
-**v0.1.0 has five rule kinds: four native checks and one way to connect external
+**Linebind has five rule kinds: four native checks and one way to connect external
 tools.** Native checks inspect captured files without installing dependencies
 or executing project code.
 
@@ -226,9 +226,8 @@ validate dataset rows or apply infrastructure.
 
 ## With your coding agent
 
-**The development version bundles a skill for Codex, Claude Code and
-Antigravity.** These commands are new after v0.1.0; use a
-[source build](docs/installation.md#build-from-source) until the next release.
+**Starting with v0.2.0, Linebind bundles a skill for Codex, Claude Code and
+Antigravity.** See [installation](docs/installation.md) for the executable.
 Install the CLI once in your environment, then run this in your project:
 
 ```sh

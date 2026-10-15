@@ -1,6 +1,6 @@
 # Operating Linebind
 
-This skill accompanies the current development version, targeting v0.2.0.
+This skill requires Linebind v0.2.0 or a compatible source build.
 `setup` and `preview` are not available in the published v0.1.0 executable.
 Use a compatible supplied build or a release that documents these commands;
 check `linebind --version` and `linebind --help` before assuming support.

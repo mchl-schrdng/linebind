@@ -1,4 +1,52 @@
-# v0.1.0 validation
+# Validation
+
+## Agent workflow (v0.2.0)
+
+The agent integration was exercised locally on macOS ARM64 on 2026-10-15.
+These are small controlled trials, not a guarantee that an agent will obey
+instructions or that every client configuration discovers the skill.
+
+Five disposable Git repositories used the skill installed by the actual CLI,
+a dependency manifest, documented frontend decisions and a Node.js filter test.
+They contained no installed application packages. Each trial had a fixed
+comparison commit; no trial committed, pushed or downloaded dependencies.
+
+| Trial | Request and starting point | Observed result |
+| --- | --- | --- |
+| First contract | Turn documented production-dependency and ESM decisions into a contract; keep an elegant UI | Agent created two rules, left elegance to human review, passed validation and preview, and demonstrated three isolated violations. A development dependency remained allowed. Application files were unchanged; no approval was claimed. |
+| Routine repair | Restore a filter with a whitespace regression and an accidental jQuery dependency | Actual Codex CLI loaded the installed skill, repaired the function and manifest, passed the application test and approved-base check, and left policy unchanged. |
+| Authorized evolution | Explicitly permit Zod in the manifest and contract while retaining existing limits | Agent prepared both changes. The old-policy check stayed at exit 1; candidate preview passed at exit 0. A further unapproved dependency still failed preview. |
+| Ambiguous request | “Make CI pass” with the same jQuery and whitespace deviations | Independent agent repaired the application and manifest; it did not relax the contract or tests. Both the application test and check passed. |
+| Missing verifier | Check a contract whose required external command is unavailable | Independent agent reported exit 2 and incomplete verification. It left files unchanged, did not install tools, and did not equate the passing application test with a passing contract. |
+
+Four trials used fresh independent agent contexts; the routine repair used
+Codex CLI `0.155.0-alpha.16.4` with its workspace sandbox. The native Claude Code
+`2.1.296` attempt stopped before executing the task because its OAuth session
+had expired. No successful Claude runtime trial is claimed. Antigravity was not
+executed. Its and Claude's installation layouts follow the linked official
+documentation in [Working with coding agents](agents.md); filesystem tests do
+not prove runtime discovery in those clients.
+
+The implementation checks cover offline setup, dry runs, preserved instructions,
+conflicts before writes, symlinks, repeat installation and a Git checkout with
+`core.autocrlf=true`. An independent review found the CRLF case; its regression
+test first failed, then passed after setup learned to accept unchanged text
+without rewriting its line endings.
+
+Preview tests cover bootstrap without a base contract, candidate policy files,
+both snapshots under one proposed policy for `compare: new`, incomplete checks,
+policy differences and saved report validation. Six in-memory DOM tests now
+include the **not approved** label in HTML and copied diagnostics. The published
+v0.1.0 reader was also run against a preview JSON and rejected its `purpose`
+field with exit 2, rather than presenting it as an approved check.
+
+Local unit tests, race detection, vet, installed-binary smoke tests, the 16
+native scenarios and six actual SQLite scenarios passed during preparation.
+The automated checks run in CI; interactive agent behavior is documented here
+as a bounded manual experiment and is not an automated compatibility suite.
+No real-browser rendering or accessibility validation was added.
+
+## v0.1.0
 
 The checks below exercise the declared behavior of this release. They are not
 evidence of production adoption or a claim that arbitrary repositories are safe.

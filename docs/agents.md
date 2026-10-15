@@ -11,9 +11,8 @@ Commit the project's contract and agent instructions alongside its source.
 The skill uses your existing agent; Linebind adds no model account or API key.
 Your agent's own source-access and service policies still apply.
 
-`setup` and `preview` require the agent-workflow version of Linebind; they are
-not available in v0.1.0. Until a newer release is published, use the
-[source installation](installation.md#build-from-source).
+`setup` and `preview` require Linebind v0.2.0 or a compatible source build;
+they are not available in v0.1.0. See [installation](installation.md).
 
 ## Install once per repository
 
@@ -37,6 +36,7 @@ choose a trusted base or create a contract.
 
 `all` writes two identical copies of the skill, with no symlinks. Existing
 instructions are preserved. Repeating the same installation changes nothing.
+Git's LF/CRLF conversion is accepted without rewriting existing skill files.
 If an existing Linebind skill or instruction block differs, setup stops before
 writing: reconcile those files deliberately, including during upgrades. There
 is no force-overwrite option. Ordinary destination conflicts are preflighted;
@@ -177,6 +177,11 @@ uses documented instruction and skill locations, not a private model API.
 Supported directory layouts and CLI behavior can be tested deterministically;
 an installed file does not prove that a particular agent session loaded or
 followed it. Agent settings, version, permissions and environment still matter.
+
+A real Codex CLI trial loaded the skill and repaired a deviation. The Claude
+Code trial stopped on expired authentication before execution; Antigravity
+runtime discovery has not been exercised. See the [validation record](validation.md#agent-workflow-v020)
+for the five controlled workflow trials and the exact limits of these results.
 
 The skill source lives in
 [`internal/agentsetup/skill`](../internal/agentsetup/skill/).

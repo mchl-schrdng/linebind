@@ -153,6 +153,51 @@ func TestPreservesGuidanceAndContractFromSubdirectory(t *testing.T) {
 	absent(t, subdir, ".agents", ".claude", "AGENTS.md", "CLAUDE.md")
 }
 
+func TestInstallAfterCRLFCheckout(t *testing.T) {
+	dir := newRepo(t)
+	runGit := func(args ...string) {
+		t.Helper()
+		if output, err := exec.Command("git", append([]string{"-C", dir}, args...)...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v %s", args, err, output)
+		}
+	}
+	runGit("config", "core.autocrlf", "true")
+	runGit("config", "core.safecrlf", "false")
+	runGit("config", "core.hooksPath", t.TempDir())
+	installed, err := Setup(dir, "codex", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runGit("add", ".")
+	runGit("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", "commit", "-qm", "Installed skill")
+	for _, file := range installed {
+		if err := os.Remove(filepath.Join(dir, filepath.FromSlash(file.Path))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	runGit("checkout", "--", ".")
+	before := map[string][]byte{}
+	for _, file := range installed {
+		before[file.Path] = get(t, dir, file.Path)
+		if !bytes.Contains(before[file.Path], []byte("\r\n")) {
+			t.Fatalf("%s was not checked out with CRLF", file.Path)
+		}
+	}
+	changes, err := Setup(dir, "all", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, change := range changes {
+		if previous, exists := before[change.Path]; exists {
+			if change.Action != "unchanged" || !bytes.Equal(get(t, dir, change.Path), previous) {
+				t.Fatalf("CRLF file was rewritten: %+v", change)
+			}
+		} else if change.Action != "create" {
+			t.Fatalf("additional agent was not installed: %+v", change)
+		}
+	}
+}
+
 func TestTargetSelection(t *testing.T) {
 	for _, agent := range []string{"codex", "antigravity", "claude"} {
 		t.Run(agent, func(t *testing.T) {

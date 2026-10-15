@@ -76,7 +76,8 @@ func Setup(repoDir, agent string, dryRun bool) ([]Change, error) {
 			}
 			action := "create"
 			if exists {
-				if !bytes.Equal(previous, content) {
+				// Git may check out bundled Markdown with CRLF on Windows.
+				if !bytes.Equal(bytes.ReplaceAll(previous, []byte("\r\n"), []byte("\n")), content) {
 					return fmt.Errorf("%s differs from the bundled skill; preserve or reconcile it manually before setup", destination)
 				}
 				action = "unchanged"
