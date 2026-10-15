@@ -84,6 +84,7 @@ func npmDependencies(data []byte, sections []string) ([]string, []string, error)
 				return nil, nil, fmt.Errorf("npm %s contains an empty package name or specification", section)
 			}
 			deps = append(deps, name)
+			lowerSpec := strings.ToLower(spec)
 			if strings.HasPrefix(spec, "npm:") {
 				alias := strings.TrimPrefix(spec, "npm:")
 				if at := strings.LastIndex(alias, "@"); at > 0 {
@@ -93,7 +94,8 @@ func npmDependencies(data []byte, sections []string) ([]string, []string, error)
 					return nil, nil, fmt.Errorf("invalid npm alias for %s", name)
 				}
 				deps = append(deps, alias)
-			} else if strings.ContainsAny(spec, ":/") {
+			} else if strings.ContainsAny(spec, ":/\\") || strings.HasPrefix(spec, ".") ||
+				strings.HasSuffix(lowerSpec, ".tgz") || strings.HasSuffix(lowerSpec, ".tar.gz") || strings.HasSuffix(lowerSpec, ".tar") {
 				diagnostics = append(diagnostics, "dependency "+name+" uses a non-registry source whose package identity is unverified")
 			}
 		}

@@ -1,10 +1,12 @@
 package contract
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/mchl-schrdng/linebind/internal/model"
+	"go.yaml.in/yaml/v3"
 )
 
 const textContract = `version: 1
@@ -272,6 +274,23 @@ func TestInvalidAndNonRegistryDependenciesUnverified(t *testing.T) {
 	}
 }
 
+func TestLocalNPMSourceSpecificationsCannotPassAsRegistryNames(t *testing.T) {
+	config := strings.Replace(dependenciesContract, "deny: [axios]", "allow: [safe]", 1)
+	for _, spec := range []string{"blocked.tgz", "blocked.tar.gz", "blocked.tar", "BLOCKED.TGZ", ".local-package", "..", `vendor\package`} {
+		input := `{"dependencies":{"safe":` + strconv.Quote(spec) + `}}`
+		got := oneCheck(t, config, map[string][]byte{"package.json": []byte(input)})
+		if got.Status != "unverified" || len(got.Diagnostics) == 0 {
+			t.Fatalf("local source %q passed its declared name: %+v", spec, got)
+		}
+	}
+	for _, spec := range []string{"1.2.3", "^1.2.3", ">=1 <2", "latest", "beta"} {
+		input := `{"dependencies":{"safe":` + strconv.Quote(spec) + `}}`
+		if got := oneCheck(t, config, map[string][]byte{"package.json": []byte(input)}); got.Status != "passed" {
+			t.Fatalf("registry specification %q rejected: %+v", spec, got)
+		}
+	}
+}
+
 func TestGoModulesDirectAndReplacement(t *testing.T) {
 	config := strings.ReplaceAll(dependenciesContract, "package.json", "go.mod")
 	config = strings.Replace(config, "format: npm", "format: go", 1)
@@ -362,5 +381,108 @@ func TestDeterministicSelectionAndCombinedFailure(t *testing.T) {
 	selected, err := Select([]string{"src/**/*.ts", "src/**"}, files)
 	if err != nil || len(selected) != 3 || selected[0] != "src/a.ts" {
 		t.Fatalf("selection not sorted/deduplicated: %v %v", selected, err)
+	}
+}
+
+func TestDocumentIdentitiesStayBoundedForNestedValues(t *testing.T) {
+	for _, depth := range []int{8, 64} {
+		input := strings.Repeat(`{"nested":`, depth) + `"invalid"` + strings.Repeat("}", depth)
+		docs, err := parseDocuments([]byte(input))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if size := len(documentIdentity(docs[0])); size > 1024 {
+			t.Fatalf("%d levels expanded %d input bytes into a %d-byte identity", depth, len(input), size)
+		}
+	}
+}
+
+func TestDocumentIdentitiesNormalizeValuesWithoutLosingTypes(t *testing.T) {
+	identity := func(input string) string {
+		t.Helper()
+		docs, err := parseDocuments([]byte(input))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return documentIdentity(docs[0])
+	}
+	if identity("{a: 0x50, b: false}") != identity("{b: false, a: 80}") {
+		t.Fatal("map order or integer formatting changed the identity")
+	}
+	for _, pair := range [][2]string{{"80", "81"}, {"false", `"false"`}, {"80", `"80"`}, {"null", `"null"`}} {
+		if identity(pair[0]) == identity(pair[1]) {
+			t.Fatalf("different typed values share an identity: %v", pair)
+		}
+	}
+}
+
+func TestDocumentIdentityDoesNotRoundFloatingValues(t *testing.T) {
+	for _, pair := range [][2]string{
+		{"18446744073709551616", "18446744073709551617"},
+		{"0.100000000000000001", "0.100000000000000002"},
+	} {
+		first := &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!float", Value: pair[0]}
+		second := &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!float", Value: pair[1]}
+		if documentIdentity(first) == documentIdentity(second) {
+			t.Fatalf("distinct numeric literals share an identity: %v", pair)
+		}
+	}
+}
+
+func TestNumericPrecisionLimitsApplyToContractsAndDocuments(t *testing.T) {
+	config := strings.Replace(documentContract, "/spec/containers/*/securityContext/privileged", "/mode", 1)
+	config = strings.Replace(config, "forbidden-values: [true]", "equals: safe", 1)
+	for _, literal := range []string{
+		"18446744073709551616", "18446744073709551617",
+		"0.100000000000000001", "0.100000000000000002",
+		"4e-324", "1e-9999", "1e400", "0e401", ".nan", ".inf",
+		"1." + strings.Repeat("0", 1024),
+	} {
+		got := oneCheck(t, config, map[string][]byte{"infra/value.yaml": []byte("mode: " + literal + "\n")})
+		if got.Status != "unverified" || len(got.Diagnostics) == 0 {
+			t.Errorf("numeric literal %q must be incomplete, got status=%s diagnostics=%v", literal, got.Status, got.Diagnostics)
+		}
+		if _, err := Load([]byte(strings.Replace(config, "equals: safe", "equals: "+literal, 1))); err == nil {
+			t.Errorf("contract accepted numeric literal %q without an exact comparison", literal)
+		}
+	}
+	for _, literal := range []string{"0.1", "1.0", "1e-6", "0.10", "1_000.0", "18446744073709551615"} {
+		if _, err := parseDocuments([]byte("mode: " + literal)); err != nil {
+			t.Errorf("representable numeric literal %q rejected: %v", literal, err)
+		}
+	}
+}
+
+func TestOverflowingJSONNumberCannotBecomeAString(t *testing.T) {
+	config := strings.Replace(documentContract, "/spec/containers/*/securityContext/privileged", "/mode", 1)
+	config = strings.Replace(config, "infra/*.yaml", "infra/*.json", 1)
+	config = strings.Replace(config, "forbidden-values: [true]", `equals: "1e400"`, 1)
+	for _, tc := range []struct{ input, want string }{
+		{`{"mode":1e400}`, "unverified"},
+		{`{"mode":"1e400"}`, "passed"},
+	} {
+		got := oneCheck(t, config, map[string][]byte{"infra/value.json": []byte(tc.input)})
+		if got.Status != tc.want {
+			t.Errorf("%s: want %s, got %+v", tc.input, tc.want, got)
+		}
+	}
+}
+
+func TestNonDecimalFloatsCannotReachExactParsing(t *testing.T) {
+	for _, literal := range []string{"0x1p-999999", "1/2"} {
+		if err := validateFloat(&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!float", Value: literal}); err == nil {
+			t.Fatalf("non-decimal literal %q accepted", literal)
+		}
+	}
+}
+
+func TestRequiredFilesStopsAtFindingLimit(t *testing.T) {
+	config := "version: 1\nname: Required entries\nrules:\n  - id: missing\n    kind: require-files\n    reason: Keep each entry available.\n    files:\n      require:\n"
+	for i := 0; i < maxFindings+1; i++ {
+		config += "        - missing-" + strconv.Itoa(i) + ".md\n"
+	}
+	got := oneCheck(t, config, map[string][]byte{})
+	if got.Status != "unverified" || len(got.Findings) != maxFindings || len(got.Diagnostics) == 0 {
+		t.Fatalf("required-file findings escaped their bound: status=%s findings=%d diagnostics=%v", got.Status, len(got.Findings), got.Diagnostics)
 	}
 }

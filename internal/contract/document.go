@@ -1,6 +1,8 @@
 package contract
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path"
@@ -129,7 +131,14 @@ func documentIdentity(n *yaml.Node) string {
 		return "missing"
 	}
 	parts := []string{n.Tag, n.Value}
-	if n.Kind == yaml.MappingNode {
+	if n.Kind == yaml.ScalarNode && n.Tag != "!!timestamp" && n.Tag != "!!float" {
+		var value any
+		if err := n.Decode(&value); err == nil {
+			if encoded, err := json.Marshal(value); err == nil {
+				parts[1] = string(encoded)
+			}
+		}
+	} else if n.Kind == yaml.MappingNode {
 		var entries []string
 		for i := 0; i < len(n.Content); i += 2 {
 			entry, _ := json.Marshal([]string{n.Content[i].Value, documentIdentity(n.Content[i+1])})
@@ -143,7 +152,10 @@ func documentIdentity(n *yaml.Node) string {
 		}
 	}
 	data, _ := json.Marshal(parts)
-	return string(data)
+	// Keep each child identity bounded; repeatedly escaping nested JSON strings
+	// otherwise grows exponentially for a small, deeply nested document.
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:])
 }
 
 func documentViolation(rule *DocumentRule, n *yaml.Node) (bool, string) {

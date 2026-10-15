@@ -1,5 +1,37 @@
 # Validation
 
+## Repository review after v0.3.0
+
+On 2026-10-15, a review of the CLI, native evaluators, Git capture, command
+adapters, report, agent setup, distribution scripts, fixtures and workflows
+found reproducible defects that the existing tests had missed. Corrections
+received a second independent code review and regression tests:
+
+| Boundary | Reproduction and corrected behavior |
+| --- | --- |
+| External JSON | Case variants such as `failures`/`FAILURES` could erase evidence. Known typed fields now require exact spelling, including Unicode case variants; unknown metadata and case-sensitive map keys remain supported. |
+| Dependency-cruiser | Null or empty rule records could count as active policy. Named and allowed rules now validate their respective output structures; actual allowed-only policies are exercised. |
+| Git capture | Oversized committed blobs could exhaust the batch read before omission. Sizes are now checked before reading contents, with file-count and aggregate limits preserved. |
+| Document identities | Nested values caused exponential intermediate strings. Each node now has a bounded hash; equivalent integer notation preserves an existing finding. |
+| Numeric comparison | Distinct large or precise values could round into a passing equality. Unsupported numeric precision/range now produces incomplete verification or an invalid contract. Overflowing JSON numbers cannot become strings implicitly. |
+| Required files | Out-of-scope omissions could block a narrowed rule; the native finding cap was missing. Scope and required patterns now intersect, and truncated evidence is incomplete. |
+| npm sources | Relative tarball specifications could be mistaken for registry dependencies. Their underlying package identity now remains unverified. |
+| Initialization | A contract targeting `.gitignore` could be reported as created while being corrupted. Conflicting paths are rejected before writes. |
+
+Local macOS ARM64 validation used Go 1.27.2: `go test -race -count=1 ./...`
+passed 219 tests/subtests with real dependency-cruiser 17.3.8 and Conftest 0.62.0
+enabled and no skipped tests. Vet, formatting, module verification and
+`go mod tidy -diff` passed. The source-built executable passed installation
+smoke checks, all 26 native/SQLite/public-snapshot pilot scenarios and all eight
+DOM interaction checks. The public pilot still uses seeded changes, not an
+upstream incident or independent adoption. No real-browser or accessibility
+validation is established by these checks.
+
+The review adds no runtime dependency or new rule kind. It removes an obsolete
+preparation stub and a redundant JSON EOF check, and corrects documentation of
+candidate-policy behavior. Tests, runnable examples, artwork sources and
+license notices remain because they support the shipped behavior and evidence.
+
 ## Evolving contracts and report usability (v0.3.0)
 
 On 2026-10-15, [PR #6](https://github.com/mchl-schrdng/linebind/pull/6)

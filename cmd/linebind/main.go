@@ -283,6 +283,10 @@ func run(args []string, out, errOut io.Writer) int {
 }
 
 func initialize(dir, name string) error {
+	first, _, _ := strings.Cut(name, "/")
+	if strings.EqualFold(first, ".gitignore") {
+		return fmt.Errorf("contract path conflicts with .gitignore, which init manages separately")
+	}
 	repo, err := repository.Open(dir)
 	if err != nil {
 		return err
@@ -444,10 +448,6 @@ func loadReport(data []byte) (model.Report, error) {
 	d.DisallowUnknownFields()
 	if err := d.Decode(&r); err != nil {
 		return r, fmt.Errorf("invalid report: %w", err)
-	}
-	var trailing any
-	if err := d.Decode(&trailing); err != io.EOF {
-		return r, fmt.Errorf("expected one JSON report")
 	}
 	_, dateErr := time.Parse(time.RFC3339, r.GeneratedAt)
 	if r.SchemaVersion != 1 || (r.Purpose != "" && r.Purpose != "preview") || r.Version == "" || dateErr != nil || !validStatus(r.Status) || r.ExitCode < 0 || r.ExitCode > 2 {

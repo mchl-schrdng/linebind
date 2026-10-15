@@ -169,6 +169,17 @@ func TestRunCommandStructuredFailureKeepsEvidence(t *testing.T) {
 	}
 }
 
+func TestRunCommandRejectsCaseAliasesThatEraseEvidence(t *testing.T) {
+	rule, snapshot := commandFixture(t, "json")
+	rule.Command.Argv = append(rule.Command.Argv, "0")
+	rule.Command.Format = "conftest"
+	snapshot.Files["result.json"] = []byte(`[{"filename":"src/input.txt","namespace":"main","successes":1,"failures":[{"msg":"real violation"}],"FAILURES":[]}]`)
+	got := runCommand(rule, snapshot, snapshot, true)
+	if got.Status != "unverified" || !strings.Contains(strings.Join(got.Diagnostics, " "), "exact spelling") {
+		t.Fatalf("ambiguous failure fields produced a verdict: %+v", got)
+	}
+}
+
 func TestRealConftest(t *testing.T) {
 	bin := os.Getenv("LINEBIND_CONFTEST")
 	if bin == "" {
@@ -217,6 +228,16 @@ func TestRealDependencyCruiser(t *testing.T) {
 		if got := runCommand(rule, snapshot, snapshot, true); got.Status != tc.status || !strings.Contains(strings.Join(got.Diagnostics, " "), "syntax validity requires") {
 			t.Fatalf("real depcruise %q: %+v", tc.input, got)
 		}
+	}
+	// Allowed rules have no per-rule name or severity in the real tool output.
+	snapshot.Files["rules.cjs"] = []byte(`module.exports={allowed:[{from:{},to:{path:"^src/b.js$"}}],allowedSeverity:"error"};`)
+	snapshot.Files["src/a.js"] = []byte("import {b} from './b.js'; export const a=b;")
+	if got := runCommand(rule, snapshot, snapshot, true); got.Status != "passed" {
+		t.Fatalf("real allowed-only dependency policy rejected: %+v", got)
+	}
+	snapshot.Files["src/b.js"] = []byte("import {a} from './a.js'; export const b=a;")
+	if got := runCommand(rule, snapshot, snapshot, true); got.Status != "crossed" {
+		t.Fatalf("real allowed-only dependency violation lost: %+v", got)
 	}
 }
 

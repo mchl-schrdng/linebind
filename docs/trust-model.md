@@ -173,7 +173,7 @@ Use a separate required compiler or syntax check for that evidence.
 | Files per snapshot | 25,000 |
 | Contract file | 1 MiB |
 | Rules per contract | 256 |
-| Native findings per check | 1,000; hitting the cap is reported as incomplete |
+| Native findings per check | 1,000; truncated results are reported as incomplete |
 | Command timeout | 30 seconds by default; maximum 300 seconds |
 | Command stdout | 8 MiB |
 | Command stderr | 64 KiB |
@@ -195,6 +195,9 @@ omission diagnostics.
 YAML parsing rejects aliases, anchors, duplicate keys and unsupported tags.
 Document nesting and the number of documents are bounded. These are deliberate
 format limits, not evidence that a rejected file is an invalid project file.
+Numeric parsing also rejects decimal precision loss and out-of-range literals;
+see the [document limits](configuration.md#json-and-yaml-values). It does not
+silently round distinct values into a passing equality result.
 
 ## Reports and writes
 

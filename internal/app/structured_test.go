@@ -24,7 +24,25 @@ func TestDependencyResultsRequireCompleteCoverage(t *testing.T) {
 		t.Fatalf("actual schema rejected: %+v %v", findings, err)
 	}
 	for name, edit := range map[string]func(map[string]any){
-		"zero rules":            func(x map[string]any) { x["summary"].(map[string]any)["ruleSetUsed"] = map[string]any{} },
+		"zero rules": func(x map[string]any) { x["summary"].(map[string]any)["ruleSetUsed"] = map[string]any{} },
+		"null rule": func(x map[string]any) {
+			x["summary"].(map[string]any)["ruleSetUsed"] = map[string]any{"forbidden": []any{nil}}
+		},
+		"empty rule": func(x map[string]any) {
+			x["summary"].(map[string]any)["ruleSetUsed"] = map[string]any{"forbidden": []any{map[string]any{}}}
+		},
+		"unsupported rule severity": func(x map[string]any) {
+			x["summary"].(map[string]any)["ruleSetUsed"] = map[string]any{"forbidden": []any{map[string]any{"name": "rule", "severity": "unknown"}}}
+		},
+		"null allowed rule": func(x map[string]any) {
+			x["summary"].(map[string]any)["ruleSetUsed"] = map[string]any{"allowed": []any{nil}, "allowedSeverity": "error"}
+		},
+		"empty allowed rule": func(x map[string]any) {
+			x["summary"].(map[string]any)["ruleSetUsed"] = map[string]any{"allowed": []any{map[string]any{}}, "allowedSeverity": "error"}
+		},
+		"missing allowed severity": func(x map[string]any) {
+			x["summary"].(map[string]any)["ruleSetUsed"] = map[string]any{"allowed": []any{map[string]any{"from": map[string]any{}, "to": map[string]any{}}}}
+		},
 		"missing summary count": func(x map[string]any) { delete(x["summary"].(map[string]any), "error") },
 		"inconsistent summary":  func(x map[string]any) { x["summary"].(map[string]any)["error"] = 0 },
 		"hidden invalid dependency": func(x map[string]any) {
@@ -86,6 +104,16 @@ func TestDependencyResultsRequireCompleteCoverage(t *testing.T) {
 	findings, err = dependencyFindings(adapterRule(), []byte(unknown), "/snapshot", files, selected)
 	if err == nil || len(findings) != 1 {
 		t.Fatal("incomplete graph must retain known violations")
+	}
+}
+
+func TestDependencyResultsCannotEraseInvalidityWithCaseAliases(t *testing.T) {
+	data := strings.Replace(validCruise, `"valid":false`, `"valid":false,"VALID":true`, 1)
+	data = strings.Replace(data, `"violations":[{"type":"dependency","from":"src/a.js","to":"src/b.js","rule":{"name":"no-b","severity":"error"}}]`, `"violations":[]`, 1)
+	data = strings.Replace(data, `"error":1`, `"error":0`, 1)
+	files := map[string][]byte{"src/a.js": {}, "src/b.js": {}}
+	if _, err := dependencyFindings(adapterRule(), []byte(data), "/snapshot", files, []string{"src/a.js", "src/b.js"}); err == nil {
+		t.Fatal("ambiguous dependency validity produced a verdict")
 	}
 }
 

@@ -111,6 +111,10 @@ func evaluateFiles(r Rule, selected []string, check *model.Check) {
 			}
 		}
 		if !found {
+			if len(check.Findings) == maxFindings {
+				check.Diagnostics = append(check.Diagnostics, "finding limit reached; remaining required-file findings were not reported")
+				return
+			}
 			check.Findings = append(check.Findings, finding(r, expected, expected, "Required file pattern has no matching file."))
 		}
 	}

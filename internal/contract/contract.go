@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/big"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"go.yaml.in/yaml/v3"
@@ -358,6 +360,16 @@ func validateNode(n *yaml.Node, depth int) error {
 	if !slices.Contains([]string{"!!map", "!!seq", "!!str", "!!bool", "!!int", "!!float", "!!null", "!!timestamp"}, n.Tag) {
 		return fmt.Errorf("unsupported YAML tag %q (line %d)", n.Tag, n.Line)
 	}
+	if n.Tag == "!!float" {
+		if err := validateFloat(n); err != nil {
+			return fmt.Errorf("unsupported number at line %d: %w", n.Line, err)
+		}
+	}
+	// The YAML resolver falls back to a string when a plain decimal overflows.
+	// Keep JSON numbers and unquoted YAML numbers from silently changing type.
+	if n.Tag == "!!str" && n.Style == 0 && decimalLiteral.MatchString(strings.ReplaceAll(n.Value, "_", "")) {
+		return fmt.Errorf("numeric literal exceeds the supported range (line %d); quote an intended string", n.Line)
+	}
 	if n.Kind == yaml.MappingNode {
 		seen := map[string]bool{}
 		for i := 0; i < len(n.Content); i += 2 {
@@ -375,6 +387,39 @@ func validateNode(n *yaml.Node, depth int) error {
 		if err := validateNode(child, depth+1); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+var decimalLiteral = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$`)
+
+func validateFloat(n *yaml.Node) error {
+	if len(n.Value) > 1024 {
+		return fmt.Errorf("floating-point literal exceeds 1 KiB")
+	}
+	literal := strings.ReplaceAll(n.Value, "_", "")
+	if !decimalLiteral.MatchString(literal) {
+		return fmt.Errorf("unsupported floating-point literal")
+	}
+	if i := strings.LastIndexAny(literal, "eE"); i >= 0 {
+		exponent, err := strconv.Atoi(literal[i+1:])
+		if err != nil || exponent < -400 || exponent > 400 {
+			return fmt.Errorf("decimal exponent must be between -400 and 400")
+		}
+	}
+	var value float64
+	if err := n.Decode(&value); err != nil || math.IsNaN(value) || math.IsInf(value, 0) {
+		return fmt.Errorf("number must decode to a finite value")
+	}
+	// Bound the input before exact rational parsing. Comparing decimal text
+	// avoids promising exact binary representation for ordinary values like 0.1.
+	original, ok := new(big.Rat).SetString(literal)
+	if !ok {
+		return fmt.Errorf("unsupported floating-point literal")
+	}
+	canonical, ok := new(big.Rat).SetString(strconv.FormatFloat(value, 'g', -1, 64))
+	if !ok || original.Cmp(canonical) != 0 {
+		return fmt.Errorf("number loses precision when decoded")
 	}
 	return nil
 }
