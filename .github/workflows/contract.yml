@@ -1,0 +1,74 @@
+name: Repository contract
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linebind-contract-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Linebind contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Check out the approved base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Fetch the candidate as Git objects
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ && "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 --wrap=0)
+          printf '::add-mask::%s\n' "$auth"
+          git -c "http.${GITHUB_SERVER_URL}/.extraheader=AUTHORIZATION: basic $auth" \
+            fetch --no-tags --depth=1 origin "$HEAD_SHA"
+          test "$(git rev-parse --verify FETCH_HEAD)" = "$HEAD_SHA"
+          git cat-file -e "${BASE_SHA}^{commit}"
+
+      - name: Install the pinned published verifier
+        run: |
+          mkdir -p "$RUNNER_TEMP/linebind-bin"
+          archive="$RUNNER_TEMP/linebind_0.1.0_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/mchl-schrdng/linebind/releases/download/v0.1.0/linebind_0.1.0_linux_amd64.tar.gz \
+            --output "$archive"
+          printf '359cf99205a0a0abd9af7f12434045eea1619635499d6d890ab09f4735a7ea3d  %s\n' "$archive" \
+            | sha256sum --check --strict
+          tar -xzf "$archive" -C "$RUNNER_TEMP/linebind-bin" linebind
+          "$RUNNER_TEMP/linebind-bin/linebind" --version
+
+      - name: Check the candidate against the base contract
+        run: |
+          mkdir -p "$RUNNER_TEMP/linebind-report"
+          set -o pipefail
+          "$RUNNER_TEMP/linebind-bin/linebind" check \
+            --repo "$GITHUB_WORKSPACE" \
+            --base "$BASE_SHA" --head "$HEAD_SHA" \
+            --format json --html "$RUNNER_TEMP/linebind-report/report.html" \
+            | tee "$RUNNER_TEMP/linebind-report/result.json"
+
+      - name: Keep the reports even when the gate fails
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: linebind-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/linebind-report/
+          if-no-files-found: warn
+          retention-days: 7

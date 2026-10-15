@@ -25,3 +25,29 @@ go run ./scripts/pilots -binary /absolute/path/to/linebind
 This produces fresh JSON and actual standalone HTML reports. The illustration
 does not establish browser rendering or interaction compatibility. DOM-based
 tests and native report tests are separate from visual browser QA.
+
+## CLI output
+
+`frontend-cli.png` is a faithful rendering of stdout captured from the published
+Linebind v0.1.0 macOS ARM64 binary. It is not a screenshot of the Terminal app.
+Only visual line wrapping and text colors were added; no diagnostic was removed
+or rewritten. `frontend-cli.svg` is the image source and `frontend-cli.txt` is
+the raw stdout. The shell prompt, window heading and exit-code footer are
+presentation labels outside that stdout.
+
+The run used a fresh `react-storefront` Git repository containing
+`examples/frontend/base/.linebind.yml`, the base `package.json`, and an ignore
+entry for `/.linebind/`. Those files were committed on `main`; on
+`feature/product-carousel`, the manifest was replaced by
+`examples/frontend/crossed/package.json`. The command was:
+
+```sh
+linebind check --base main --html .linebind/report.html
+```
+
+It returned exit code `1`. A second check with `--format json --output
+.linebind/report.json` against the same captured inputs produced the preserved
+`frontend-cli.json`; its hashes identify the base, contract and candidate input.
+The scenario tests a seeded manifest change, not a built carousel or an actual
+production application. The native check needs neither npm installation nor a
+model API key.
