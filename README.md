@@ -9,6 +9,7 @@
 <p align="center">Keep the decisions that matter in a versioned contract.<br>Check changes locally, in CI, and in a readable, offline report.</p>
 
 <p align="center">
+  <a href="#what-can-a-contract-check">What it checks</a> ·
   <a href="#get-started">Get started</a> ·
   <a href="#a-frontend-change-in-practice">A real workflow</a> ·
   <a href="docs/configuration.md">Write a contract</a> ·
@@ -43,6 +44,58 @@ Native checks inspect files, text, dependency manifests and JSON/YAML documents.
 Opt-in commands connect specialist tools. The same contract workflow works
 across frontend, backend, data and infrastructure repositories; the coverage
 comes from the checks you actually declare.
+
+## What can a contract check?
+
+**v0.1.0 has five rule kinds: four native checks and one way to connect external
+tools.** Native checks inspect captured files without installing dependencies
+or executing project code.
+
+| Rule kind | Example decision | What the check establishes |
+| --- | --- | --- |
+| [`require-files`](docs/configuration.md#require-files) | Keep `README.md`, `LICENSE` and `docs/architecture.md`. | Each required path or glob matches at least one file. Presence does not establish content quality. |
+| [`forbid-text`](docs/configuration.md#forbid-text) | Keep the marker `DEBUG_ONLY` out of `src/`. | A Go/RE2 regular expression does not match the selected text. Comments and strings are included; this is not language or import analysis. |
+| [`dependencies`](docs/configuration.md#dependency-names) | Permit only React and React DOM as runtime dependencies, or forbid jQuery. | Declared names satisfy an allowlist or denylist in `package.json` or `go.mod`. This does not resolve transitive dependencies, enforce version ranges or audit vulnerabilities. |
+| [`document`](docs/configuration.md#json-and-yaml-values) | Preserve `type: module`, a declared API operation, or `runAsNonRoot: true`. | Selected JSON/YAML values satisfy an explicit condition. This checks declarations, not a running service, deployment or dataset. |
+| [`command`](docs/configuration.md#project-commands) | Enforce module boundaries or require a SQL transformation to produce unique IDs. | An installed tool or supplied script reports the configured outcome. Its coverage comes from that verifier and its policy. |
+
+For **dependency rules**, choose exactly one of `allow` or `deny`. npm rules
+can select `dependencies`, `devDependencies`, `peerDependencies` and
+`optionalDependencies`; omitting `sections` checks all four. Go rules inspect
+direct `require` entries and their replacements, with the limitations in the
+[reference](docs/configuration.md#dependency-names).
+
+For **document rules**, choose one condition per rule:
+
+- `document.required: true`: the selected value must exist and be non-null.
+- `document.equals`: it must equal the specified scalar or null value.
+- `document.forbidden-values`: an existing value must not equal a listed value;
+  this condition alone allows the value to be absent.
+
+Selectors can traverse objects and arrays, including `*` for their children.
+These are focused assertions, not complete JSON Schema or OpenAPI validation.
+
+For **command rules**, `command.format` selects one of three result formats:
+
+- `exit`: interpret the configured success/failure exit codes of a script or tool.
+- `dependency-cruiser`: retain structured findings from declared module/import rules.
+- `conftest`: retain structured findings from the configured Conftest policies.
+
+Commands require `--allow-exec`, tools already installed, and a suitable execution
+environment. They run with host permissions; the disposable copy is not a sandbox.
+Checks for visual regressions, accessibility, performance or actual data rows
+need an appropriate external verifier and explicit criteria.
+
+Each rule also records **where** it applies (`scope`), **why** it exists
+(`reason`) and an optional next action (`remediation`). `required: false` makes
+it advisory. `compare: strict` checks all current violations; `compare: new`
+blocks additional findings while preserving existing debt in the report.
+The `new` mode applies to native and structured command checks, not `format: exit`.
+
+Changes to the effective contract or declared policy files are also reported
+and require review. Missing or incomplete analysis remains `unverified`.
+The [configuration reference](docs/configuration.md) contains the complete YAML
+syntax and examples for each kind.
 
 ## Get started
 
