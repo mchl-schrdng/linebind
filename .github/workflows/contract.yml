@@ -45,11 +45,11 @@ jobs:
       - name: Install the pinned published verifier
         run: |
           mkdir -p "$RUNNER_TEMP/linebind-bin"
-          archive="$RUNNER_TEMP/linebind_0.2.0_linux_amd64.tar.gz"
+          archive="$RUNNER_TEMP/linebind_0.3.0_linux_amd64.tar.gz"
           curl --fail --silent --show-error --location --retry 3 \
-            https://github.com/mchl-schrdng/linebind/releases/download/v0.2.0/linebind_0.2.0_linux_amd64.tar.gz \
+            https://github.com/mchl-schrdng/linebind/releases/download/v0.3.0/linebind_0.3.0_linux_amd64.tar.gz \
             --output "$archive"
-          printf '5f711d074d2038fe09522c3f8fd13082e50c9222af0ae7d85af6b84cf71a666f  %s\n' "$archive" \
+          printf '609fc209c10803d5613f2afc4c1f903145143a4f388276f3727dbc0261401b07  %s\n' "$archive" \
             | sha256sum --check --strict
           tar -xzf "$archive" -C "$RUNNER_TEMP/linebind-bin" linebind
           "$RUNNER_TEMP/linebind-bin/linebind" --version

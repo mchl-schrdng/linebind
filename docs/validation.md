@@ -9,11 +9,15 @@ OS test jobs failed on that probe; GitHub reported the PR as **BLOCKED**.
 The [contract job passed](https://github.com/mchl-schrdng/linebind/actions/runs/38792735211)
 with an intentional rule-reason edit, demonstrating that a policy diff alone
 no longer fails proposed-policy CI. The probe was then removed before merging.
+The final PR passed all required checks and merged with the ruleset active,
+without an administrative bypass.
 The [negative test run](https://github.com/mchl-schrdng/linebind/actions/runs/38792735222)
 is retained as evidence; no failed-PR merge was attempted.
 
 The [frontend walkthrough](try-it.md) was executed directly from its shell
-blocks using a source-built CLI, Git and no project packages. Its five observed
+blocks using a source-built CLI and repeated with the published v0.3.0 macOS
+ARM64 archive after checksum verification. Both trials used Git and no project
+packages. Its five observed
 exit codes were `0, 1, 0, 0, 1`: baseline, accidental dependency, repair,
 intentional contract evolution, and separate old-policy comparison.
 
@@ -24,6 +28,11 @@ and the content remains readable without JavaScript. Go tests cover precise
 policy-review titles and required/advisory outcome guidance. The UI adds no
 runtime dependency or remote resource. These tests do not establish visual
 browser rendering, mobile layout or a full accessibility audit.
+
+The [v0.3.0 release run](https://github.com/mchl-schrdng/linebind/actions/runs/38793711640)
+passed source and extracted-archive checks on Linux, macOS and Windows before
+publishing all six archives. The Linux amd64 and macOS ARM64 downloaded bytes
+were independently compared with the published SHA-256 manifest.
 
 The repository uses its own five-rule contract. Public and synthetic pilots
 below establish bounded verifier behavior; they are not evidence of sustained

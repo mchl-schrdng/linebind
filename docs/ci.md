@@ -6,7 +6,7 @@ copyable GitHub Actions integration. It validates the PR's code under the
 a contract edit alone does not fail CI. Merging adopts the reviewed proposal.
 
 It downloads the published Linux amd64 binary from
-[v0.2.0](https://github.com/mchl-schrdng/linebind/releases/tag/v0.2.0), verifies its
+[v0.3.0](https://github.com/mchl-schrdng/linebind/releases/tag/v0.3.0), verifies its
 pinned SHA-256 and uses explicit PR base/head SHAs. The verifier is a previously
 published release, not built from the PR. Updating it requires reviewing both
 the version and checksum.
