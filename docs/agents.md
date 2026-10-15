@@ -55,6 +55,29 @@ See [Codex instructions](https://learn.chatgpt.com/docs/agent-configuration/agen
 [Claude project memory](https://code.claude.com/docs/en/memory), and
 [Antigravity rules](https://antigravity.google/docs/rules/).
 
+## Upgrade installed guidance
+
+The skill is embedded in the executable; upgrading the binary alone leaves
+previously committed skill files unchanged. Setup intentionally refuses to
+overwrite different content, including an older bundled version.
+
+After installing the new binary, generate its files in a disposable repository:
+
+```sh
+GUIDANCE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/linebind-guidance.XXXXXX")
+git -C "$GUIDANCE_DIR" init -q
+linebind setup --repo "$GUIDANCE_DIR" --agent all
+printf 'New guidance: %s\n' "$GUIDANCE_DIR"
+```
+
+Compare the generated `.agents/skills/linebind/`, `.claude/skills/linebind/`
+and Linebind blocks in `AGENTS.md`/`CLAUDE.md` with your project. Apply the
+reviewed changes to the targets you use, preserving custom instructions and
+all content outside the Linebind blocks. Commit that diff and reload skills.
+`linebind setup --agent all --dry-run` then reports unchanged files if your
+installation exactly matches the bundle; intentional customizations can keep
+producing a conflict and should be maintained deliberately.
+
 ## From a first version to a first contract
 
 During design, keep the decisions and their reasons in your existing brief or

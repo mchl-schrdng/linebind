@@ -23,6 +23,7 @@ var page = template.Must(template.New("report").Funcs(template.FuncMap{
 	"state":     state,
 	"evolution": evolutionLabel,
 	"evidence":  evidenceLabel,
+	"outcome":   checkOutcome,
 	"kind":      func(s string) string { return strings.ReplaceAll(s, "_", " ") },
 	"short":     shortRef,
 	"time":      displayTime,
@@ -34,6 +35,7 @@ type pageData struct {
 	Title      string
 	Crossed    int
 	Unverified int
+	Attention  int
 	Transcript string
 }
 
@@ -52,6 +54,7 @@ func Render(w io.Writer, result model.Report) error {
 			data.Unverified++
 		}
 	}
+	data.Attention = data.Crossed + data.Unverified
 	switch state(result.Status) {
 	case "passed":
 		data.Title = "Required checks passed."
@@ -59,6 +62,12 @@ func Render(w io.Writer, result model.Report) error {
 		data.Title = "A boundary was crossed."
 	default:
 		data.Title = "Verification is incomplete."
+	}
+	if result.Purpose != "preview" && state(result.Status) == "crossed" && len(result.Changes) > 0 && data.Crossed == 0 {
+		data.Title = "Contract review required."
+		if data.Unverified > 0 {
+			data.Title = "Contract changed; verification is incomplete."
+		}
 	}
 	if result.Purpose == "preview" {
 		switch state(result.Status) {
@@ -95,7 +104,7 @@ func Text(w io.Writer, result model.Report, agent bool) error {
 	var out bytes.Buffer
 	if result.Purpose == "preview" {
 		fmt.Fprintf(&out, "Linebind %s — PREVIEW / NOT APPROVED — %s\n", result.Version, statusLabel(result.Status))
-		fmt.Fprintln(&out, "Uses the candidate contract and policy files. The exit code describes proposed checks only; this is not a CI gate or policy approval.")
+		fmt.Fprintln(&out, "Uses the candidate contract and policy files. The exit code describes proposed checks only; it does not approve the policy change or establish compliance with the base contract.")
 	} else {
 		fmt.Fprintf(&out, "Linebind %s — %s\n", result.Version, statusLabel(result.Status))
 	}
@@ -173,6 +182,22 @@ func statusLabel(s string) string {
 	default:
 		return "Not verified"
 	}
+}
+
+func checkOutcome(check model.Check) string {
+	if state(check.Status) == "passed" {
+		if len(check.Findings) > 0 {
+			return "This check passed within its declared scope. Review the finding labels: existing or resolved findings can remain in a passing result."
+		}
+		return "This check passed within its declared scope."
+	}
+	if !check.Required {
+		return "This advisory check does not block a passing result. Review its findings or diagnostics before proceeding."
+	}
+	if state(check.Status) == "crossed" {
+		return "This required check blocks a passing result. Review the evidence and next steps below."
+	}
+	return "This required check could not be completed and blocks a passing result. Resolve the diagnostics, then run it again."
 }
 
 func evolutionLabel(s string) string {

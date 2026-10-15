@@ -9,19 +9,35 @@ no server, account, external font or network resource.
 labelled **PREVIEW / NOT APPROVED** report using the candidate's proposed policy.
 Its JSON has `"purpose": "preview"`, and `linebind report` preserves that label
 when rendering it later. An earlier v0.1.0 binary rejects preview JSON as an
-unknown format field. A passing preview is not a passing approved-policy gate.
+unknown format field. A repository can use preview to validate its proposed
+contract in CI; a passing result does not approve that contract or establish
+compliance with the base policy. The maintainer reviews the contract diff and
+adopts it through the repository's merge process.
 See the [agent workflow](agents.md#what-preview-establishes).
 
 Each check retains its reason, required or advisory setting, verification
 method, declared scope, findings and diagnostics. New, existing and resolved
 findings remain distinct. Contract changes appear separately from check
-results. The provenance section records the revisions, input digest and
+results. A short explanation distinguishes blocking required results from
+advisory results; incomplete verification stays visible. The capture time is
+shown near the summary so a saved report is not mistaken for live status.
+In an approved-base `check`, a contract-only change is titled **Contract review
+required**, rather than suggesting that a rule was violated. Coexisting
+violations or incomplete checks remain visible in the headline and evidence.
+The provenance section records the revisions, input digest and
 contract hash; these are traceability information, not an authentication seal.
 
-With JavaScript enabled, select a check to read its details. Direct links such
-as `#check-1` select the corresponding check. Without JavaScript, every check
-remains readable in the page. The copy action copies plain-text diagnostics;
-if clipboard access is unavailable, it selects the text for manual copying.
+With JavaScript enabled, the first required check needing attention opens by
+default, followed by advisory issues if all required checks passed. Select any
+check to read its details. **Needs attention** filters the navigation to crossed
+and unverified checks, including advisory results. **All checks** restores the
+full list. Direct links such as `#check-1` take precedence and reveal their check
+even when it was filtered out. Without JavaScript, every check remains readable
+in the page. Printing also includes every check.
+
+The copy action always copies the complete plain-text diagnostic, including
+checks hidden by the filter. If clipboard access is unavailable, it selects
+the text for manual copying.
 Press Escape to close that selection.
 
 ## Interaction checks
@@ -29,8 +45,10 @@ Press Escape to close that selection.
 The Go renderer tests check escaping, evidence preservation and text output.
 An optional DOM test generates a real report through the CLI, then checks its
 script against an in-memory DOM with resource and network loading disabled.
-It covers check navigation, hash changes, clipboard success and failure,
-keyboard dismissal, focus restoration and content without JavaScript.
+It covers initial issue selection, filtering, hash changes, clipboard success
+and failure, keyboard dismissal, focus restoration and content without
+JavaScript. Renderer tests also distinguish required, advisory and unknown
+outcomes without treating incomplete checks as passing.
 
 With Node.js and npm available, these POSIX shell commands keep the test-only
 dependency outside the checkout:

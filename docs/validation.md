@@ -1,5 +1,34 @@
 # Validation
 
+## Evolving contracts and report usability (v0.3.0)
+
+On 2026-10-15, [PR #6](https://github.com/mchl-schrdng/linebind/pull/6)
+exercised the actual GitHub ruleset with a temporary failing Go test. At
+commit `30cdc9285550ac0a6c4af140a763cbea75a94443`, `minimum-go` and the three
+OS test jobs failed on that probe; GitHub reported the PR as **BLOCKED**.
+The [contract job passed](https://github.com/mchl-schrdng/linebind/actions/runs/38792735211)
+with an intentional rule-reason edit, demonstrating that a policy diff alone
+no longer fails proposed-policy CI. The probe was then removed before merging.
+The [negative test run](https://github.com/mchl-schrdng/linebind/actions/runs/38792735222)
+is retained as evidence; no failed-PR merge was attempted.
+
+The [frontend walkthrough](try-it.md) was executed directly from its shell
+blocks using a source-built CLI, Git and no project packages. Its five observed
+exit codes were `0, 1, 0, 0, 1`: baseline, accidental dependency, repair,
+intentional contract evolution, and separate old-policy comparison.
+
+Eight in-memory DOM tests exercise the generated report: required issues take
+priority, URL links are respected, filtering preserves evidence and selection,
+advisory uncertainty remains discoverable, copied diagnostics retain provenance,
+and the content remains readable without JavaScript. Go tests cover precise
+policy-review titles and required/advisory outcome guidance. The UI adds no
+runtime dependency or remote resource. These tests do not establish visual
+browser rendering, mobile layout or a full accessibility audit.
+
+The repository uses its own five-rule contract. Public and synthetic pilots
+below establish bounded verifier behavior; they are not evidence of sustained
+adoption by independent maintainers.
+
 ## Linebind's own contract
 
 The [self-contract](self-contract.md) is tested against this repository's

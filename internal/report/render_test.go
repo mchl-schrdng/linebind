@@ -37,6 +37,8 @@ func TestHTMLRetainsEvidenceAndIncompleteResults(t *testing.T) {
 		"src/client/account.ts:4", "src/server/db.ts", "Use the account API.", "Existing", "Resolved", "Advisory",
 		"The adapter did not return a valid result.", "contract-hash", "input-digest", "a123456789abcdef",
 		"Declared inputs and scope", "api/openapi.yml", "Each result is scoped to its declared inputs.",
+		"Captured 14 Oct 2026 · 12:00 UTC", "This report is a snapshot; rerun after changes.",
+		"Needs attention <span>2</span>",
 	} {
 		if !strings.Contains(out.String(), want) {
 			t.Errorf("HTML lost report content %q", want)
@@ -203,11 +205,62 @@ func TestPreviewStaysDistinctInHTMLTextAndCopiedEvidence(t *testing.T) {
 					t.Errorf("preview HTML or copied evidence lost %q", want)
 				}
 			}
-			if !strings.Contains(text.String(), "PREVIEW / NOT APPROVED") || !strings.Contains(text.String(), "not a CI gate or policy approval") {
+			if !strings.Contains(text.String(), "PREVIEW / NOT APPROVED") || !strings.Contains(text.String(), "does not approve the policy change") {
 				t.Fatal("text preview could be confused with approval")
 			}
 			if strings.Contains(html.String(), "Required checks passed.") {
 				t.Fatal("preview uses the gate title")
+			}
+		})
+	}
+}
+
+func TestCheckOutcomeExplainsRequiredAndAdvisoryResults(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		check    model.Check
+		contains string
+	}{
+		{"required violation", model.Check{Required: true, Status: "crossed"}, "This required check blocks a passing result"},
+		{"required incomplete", model.Check{Required: true, Status: "unverified"}, "could not be completed and blocks a passing result"},
+		{"unknown required status", model.Check{Required: true, Status: "future"}, "could not be completed and blocks a passing result"},
+		{"advisory violation", model.Check{Status: "crossed"}, "This advisory check does not block a passing result"},
+		{"advisory incomplete", model.Check{Status: "unverified"}, "This advisory check does not block a passing result"},
+		{"passing with evidence", model.Check{Status: "passed", Findings: []model.Finding{{Evolution: "existing"}}}, "existing or resolved findings can remain in a passing result"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var out bytes.Buffer
+			if err := Render(&out, model.Report{Checks: []model.Check{test.check}}); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(out.String(), test.contains) {
+				t.Fatalf("HTML does not explain the result: want %q", test.contains)
+			}
+		})
+	}
+}
+
+func TestContractReviewTitleDoesNotInventOrHideViolations(t *testing.T) {
+	for _, test := range []struct {
+		name, purpose, status, checkStatus, title string
+	}{
+		{"policy only", "", "crossed", "passed", "Contract review required."},
+		{"policy and incomplete check", "", "crossed", "unverified", "Contract changed; verification is incomplete."},
+		{"policy and violation", "", "crossed", "crossed", "A boundary was crossed."},
+		{"passing proposal", "preview", "passed", "passed", "Proposed checks passed."},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			result := model.Report{
+				Purpose: test.purpose, Status: test.status,
+				Changes: []model.ContractChange{{Path: ".linebind.yml", Change: "modified"}},
+				Checks:  []model.Check{{ID: "boundary", Status: test.checkStatus, Required: true}},
+			}
+			var out bytes.Buffer
+			if err := Render(&out, result); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(out.String(), `<h1 id="report-title">`+test.title+`</h1>`) {
+				t.Fatalf("HTML does not distinguish policy review from verification: want %q", test.title)
 			}
 		})
 	}
