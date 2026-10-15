@@ -185,3 +185,30 @@ func TestRendererPropagatesWriteErrors(t *testing.T) {
 		t.Error("text swallowed writer failure")
 	}
 }
+
+func TestPreviewStaysDistinctInHTMLTextAndCopiedEvidence(t *testing.T) {
+	for _, status := range []string{"passed", "crossed", "unverified"} {
+		t.Run(status, func(t *testing.T) {
+			result := sampleReport()
+			result.Purpose, result.Status = "preview", status
+			var html, text bytes.Buffer
+			if err := Render(&html, result); err != nil {
+				t.Fatal(err)
+			}
+			if err := Text(&text, result, true); err != nil {
+				t.Fatal(err)
+			}
+			for _, want := range []string{"Preview / not approved", "candidate contract and policy files", "PREVIEW / NOT APPROVED", "Contract hash: contract-hash"} {
+				if !strings.Contains(html.String(), want) {
+					t.Errorf("preview HTML or copied evidence lost %q", want)
+				}
+			}
+			if !strings.Contains(text.String(), "PREVIEW / NOT APPROVED") || !strings.Contains(text.String(), "not a CI gate or policy approval") {
+				t.Fatal("text preview could be confused with approval")
+			}
+			if strings.Contains(html.String(), "Required checks passed.") {
+				t.Fatal("preview uses the gate title")
+			}
+		})
+	}
+}

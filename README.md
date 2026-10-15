@@ -12,6 +12,7 @@
   <a href="#what-can-a-contract-check">What it checks</a> ·
   <a href="#get-started">Get started</a> ·
   <a href="#a-frontend-change-in-practice">A real workflow</a> ·
+  <a href="#with-your-coding-agent">Coding agents</a> ·
   <a href="docs/configuration.md">Write a contract</a> ·
   <a href="docs/examples.md">Try the examples</a>
 </p>
@@ -47,7 +48,7 @@ comes from the checks you actually declare.
 
 ## What can a contract check?
 
-**v0.1.0 has five rule kinds: four native checks and one way to connect external
+**Linebind has five rule kinds: four native checks and one way to connect external
 tools.** Native checks inspect captured files without installing dependencies
 or executing project code.
 
@@ -223,6 +224,44 @@ The [runnable examples](docs/examples.md) cover four different contexts:
 These are focused examples. They do not install packages, call a live API,
 validate dataset rows or apply infrastructure.
 
+## With your coding agent
+
+**Starting with v0.2.0, Linebind bundles a skill for Codex, Claude Code and
+Antigravity.** See [installation](docs/installation.md) for the executable.
+Install the CLI once in your environment, then run this in your project:
+
+```sh
+linebind setup --agent all
+```
+
+The executable installs its own skill and short repository instructions,
+offline. Your project keeps its contract; it does not need a copy of Linebind's
+Go repository. Use `--agent codex`, `claude` or `antigravity` to select one target,
+or add `--dry-run` to inspect the installation first. Existing instructions are
+preserved and conflicting files are never silently overwritten.
+
+Start with your project decisions, perhaps defined with Ponytail. At the first
+stable milestone, ask your agent to **prepare a Linebind contract from those
+decisions and demonstrate what it catches**. During later development, the
+skill guides ordinary repairs and deliberate proposals to evolve the contract.
+It reuses your coding agent; Linebind needs no additional model API key.
+
+Two commands keep that distinction explicit. `BASE_SHA` below is a full commit
+ID selected by your project's review process, not a value Linebind invents:
+
+```sh
+linebind check --base "$BASE_SHA" --agent
+linebind preview --base "$BASE_SHA" --agent --html .linebind/preview.html
+```
+
+`check` evaluates the base's approved policy. `preview` tries the candidate's
+proposed policy and labels its evidence **not approved**. A successful preview
+does not approve a contract or replace the required CI check. Both commands
+inspect the working tree by default and accept `--head` for a commit.
+
+See [Working with coding agents](docs/agents.md) for first-contract setup,
+the three agent integrations, policy evolution and current verification limits.
+
 ## In a pull request
 
 The same check can run before a build or deployment. The complete
@@ -277,7 +316,7 @@ used for that run. The report shows the change and asks for review.
 
 Legitimate changes belong in the review process: explain the new decision,
 review the affected rules and policy files, then adopt the approved revision as
-the next base. v0.1.0 does not interpret a PR label or an approval field as
+the next base. Linebind does not interpret a PR label or an approval field as
 authorization. The [trust model](docs/trust-model.md) describes the complete
 boundary and the policy-change workflow.
 
@@ -293,7 +332,7 @@ it does not mark the whole repository clean.
 | `crossed` | The check found a violation or a declared command returned a failure outcome. |
 | `unverified` | The available inputs or execution could not establish a complete result. |
 
-Required checks determine the command's exit code. Advisory findings remain in
+For `check`, required checks determine the command's exit code. Advisory findings remain in
 the report, so a report can show a crossed or unverified advisory check while
 the CLI exits successfully.
 
@@ -305,6 +344,10 @@ the CLI exits successfully.
 
 When a required violation and an incomplete check coexist, the exit code is `1`;
 the incomplete check and its diagnostics remain visible.
+
+`preview` uses the same statuses for proposed-policy analysis, but policy
+differences alone do not fail that experiment. It never establishes approval;
+see the [command comparison](docs/agents.md#what-preview-establishes).
 
 Native checks do not execute project code. A `command` rule stays unverified
 unless you pass `--allow-exec`. Enabled commands run with your host permissions

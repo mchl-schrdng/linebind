@@ -3,6 +3,7 @@ package model
 
 type Report struct {
 	SchemaVersion int              `json:"schema_version"`
+	Purpose       string           `json:"purpose,omitempty"` // preview; omitted for approved-base checks
 	Version       string           `json:"version"`
 	Repository    string           `json:"repository"`
 	Base          string           `json:"base"`

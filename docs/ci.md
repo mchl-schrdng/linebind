@@ -104,6 +104,12 @@ separate from ordinary code approval. Never set `--base` to the unreviewed PR
 head to manufacture a passing result. See the
 [contract evolution rules](trust-model.md#evolving-the-contract).
 
+The newer `preview` command can provide advisory evidence about a proposed
+contract before incorporation. Keep its result separate and visibly labelled;
+it neither recognizes an approval nor changes the required check's result.
+Never substitute `preview` for this workflow's `check` command. The bundled
+[agent skill](agents.md) follows the same distinction.
+
 ## Gate a frontend build
 
 To prevent a build from starting when the contract fails, place the build job

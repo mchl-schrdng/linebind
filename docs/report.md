@@ -5,6 +5,13 @@
 without repeating the analysis. Open the resulting HTML file locally; it needs
 no server, account, external font or network resource.
 
+`linebind preview --base REF --html preview.html` produces an explicitly
+labelled **PREVIEW / NOT APPROVED** report using the candidate's proposed policy.
+Its JSON has `"purpose": "preview"`, and `linebind report` preserves that label
+when rendering it later. An earlier v0.1.0 binary rejects preview JSON as an
+unknown format field. A passing preview is not a passing approved-policy gate.
+See the [agent workflow](agents.md#what-preview-establishes).
+
 Each check retains its reason, required or advisory setting, verification
 method, declared scope, findings and diagnostics. New, existing and resolved
 findings remain distinct. Contract changes appear separately from check

@@ -201,6 +201,31 @@ try {
     assert.equal(document.activeElement, button);
   });
 
+  await test('a passing preview stays visibly unapproved, including its copied diagnostic', async () => {
+    writeFileSync(join(repo, 'src/input.txt'), 'Allowed source.\n');
+    writeFileSync(join(repo, 'api/spec.json'), '{"ok":true}\n');
+    const previewJSON = join(temp, 'preview.json');
+    const previewHTML = join(temp, 'preview.html');
+    const result = spawnSync(resolve(binary), ['preview', '--repo', repo, '--base', 'HEAD', '--format', 'json', '--output', previewJSON, '--html', previewHTML], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr || result.error?.message);
+    const proposed = JSON.parse(readFileSync(previewJSON, 'utf8'));
+    assert.equal(proposed.purpose, 'preview');
+    assert.equal(proposed.contract_changes.length, 1);
+    const copied = [];
+    const dom = parse(readFileSync(previewHTML, 'utf8'), { scripts: true, clipboard: { writeText: async text => copied.push(text) } });
+    const document = dom.window.document;
+    assert.match(document.title, /preview.*not approved/i);
+    assert.match(document.getElementById('preview-title').textContent, /not approved/i);
+    assert.notEqual(dom.window.getComputedStyle(document.getElementById('preview-title')).display, 'none');
+    document.getElementById('copy-report').click();
+    await tick();
+    assert.equal(copied.length, 1);
+    assert.match(copied[0], /PREVIEW.*NOT APPROVED/);
+    assert.match(copied[0], /not a CI gate/);
+    const gate = spawnSync(resolve(binary), ['check', '--repo', repo, '--base', 'HEAD'], { encoding: 'utf8' });
+    assert.equal(gate.status, 1, 'preview must not approve the policy change');
+  });
+
   for (const { dom, errors, requests } of documents) {
     assert.deepEqual(errors, [], 'Unexpected DOM script errors');
     assert.deepEqual(requests, [], 'Report attempted resource loading');

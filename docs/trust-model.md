@@ -45,7 +45,7 @@ Updating the rules is a normal project decision:
 4. Use the approved revision as the base for later code checks.
 
 A policy-only change still returns a review-required result against the old
-base. v0.1.0 has no built-in human approval mechanism, PR-label approval or
+base. Linebind has no built-in human approval mechanism, PR-label approval or
 automatic bypass. If Linebind is a required CI gate, the repository needs an
 explicit, separately controlled policy-change approval path. This is part of
 the integration, not a capability supplied by the CLI.
@@ -57,6 +57,26 @@ a passing result.
 The first contract also needs this bootstrap review: `init` writes a starter;
 `validate` checks its schema; neither operation makes it approved. `check`
 requires the selected base to already contain a valid contract.
+
+## Preview a proposed contract
+
+`preview` is a separate analysis, not an alternate approval path. It captures
+the same base and candidate inputs, but loads the contract and declared policy
+files from the candidate. The base need not contain a contract. For
+`compare: new`, both snapshots are evaluated under the same proposed policy.
+Policy differences are displayed but do not alone make preview exit `1`.
+
+Every preview report carries `purpose: preview`; terminal output, HTML and
+copied diagnostics identify it as not approved. A successful preview establishes
+only the proposed checks' result. The normal `check` against the approved base
+still reports the policy change. Do not use preview as a required CI gate or
+choose an unreviewed candidate as the base to manufacture a passing check.
+
+Preview commands require `--allow-exec` just like check commands. Unlike check,
+their declared policy files come from the candidate and may be unreviewed.
+Review the invocation and execute in an appropriate isolated environment.
+Installing the bundled agent skill does not grant execution permission, approve
+a policy or change this trust boundary. See the [agent workflow](agents.md).
 
 ## Captured inputs
 

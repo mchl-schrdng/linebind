@@ -39,7 +39,9 @@ func smoke(binary, version string) error {
 		return err
 	}
 	defer os.RemoveAll(dir)
-	commands := [][]string{{"git", "init", "--quiet"}, {binary, "--version"}, {binary, "--help"}, {binary, "init"}, {binary, "validate"}}
+	commands := [][]string{{"git", "init", "--quiet"}, {binary, "--version"}, {binary, "--help"},
+		{binary, "setup", "--agent", "all", "--dry-run"}, {binary, "setup", "--agent", "all"},
+		{binary, "setup", "--agent", "all"}, {binary, "init"}, {binary, "validate"}}
 	for _, args := range commands {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
@@ -55,7 +57,20 @@ func smoke(binary, version string) error {
 		if args[1] == "--help" && (!strings.Contains(string(output), "init") || !strings.Contains(string(output), "validate")) {
 			return fmt.Errorf("help is missing init or validate: %s", output)
 		}
+		if args[len(args)-1] == "--dry-run" {
+			if _, err := os.Stat(filepath.Join(dir, "AGENTS.md")); !os.IsNotExist(err) {
+				return fmt.Errorf("setup dry-run created instructions")
+			}
+		}
 		fmt.Printf("PASS %s\n", strings.Join(args[1:], " "))
+	}
+	shared, err := os.ReadFile(filepath.Join(dir, ".agents", "skills", "linebind", "SKILL.md"))
+	if err != nil {
+		return err
+	}
+	claude, err := os.ReadFile(filepath.Join(dir, ".claude", "skills", "linebind", "SKILL.md"))
+	if err != nil || string(shared) != string(claude) || !strings.Contains(string(shared), "name: linebind") {
+		return fmt.Errorf("installed skill is missing or differs between agents: %v", err)
 	}
 	return nil
 }
