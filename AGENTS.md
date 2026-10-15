@@ -4,13 +4,17 @@ Read the project's [Linebind skill](internal/agentsetup/skill/SKILL.md) when
 creating, checking or evolving this repository's contract. This source repository
 uses the bundled skill directly; keep its canonical content in that directory.
 
-The maintained `origin/main` branch supplies the approved policy for local work.
-Resolve it to a full commit SHA at the start of a task and keep that SHA fixed.
-CI uses the explicit pull-request base and head SHAs instead. Do not substitute
-the candidate's own revision to make a check pass.
+Resolve `origin/main` to a full commit SHA at the start of local work and keep
+that comparison fixed. CI uses explicit pull-request base and head SHAs.
+Never substitute the candidate as its own base just to obtain a pass.
 
 Use a trusted released `linebind` executable (`./bin/linebind` when available).
-Run `check --base <fixed-sha> --agent` before finishing changes. For a requested
-policy evolution, retain the old-base check and a separate `preview`; report
-the expected policy-review result. See [our contract](docs/self-contract.md)
-for scope and adoption. Run the relevant Go tests separately.
+Our CI uses `preview` to validate the proposed contract; contract edits alone
+must not fail it. Run the same validation locally. For policy evolution, keep
+an old-base `check` as separate evidence; its policy-review exit is expected.
+The maintainer adopts the proposal by merging after all required CI checks pass.
+
+Never merge with failed or pending required CI, use an administrative bypass,
+or disable protections to finish a task. No second reviewer is required.
+Run relevant Go tests separately. See [our contract](docs/self-contract.md)
+and [CI integration](docs/ci.md) for scope and adoption.

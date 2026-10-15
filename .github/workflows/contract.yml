@@ -23,7 +23,7 @@ jobs:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
-      - name: Check out the approved base
+      - name: Check out the comparison base
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.base.sha }}
@@ -45,20 +45,20 @@ jobs:
       - name: Install the pinned published verifier
         run: |
           mkdir -p "$RUNNER_TEMP/linebind-bin"
-          archive="$RUNNER_TEMP/linebind_0.1.0_linux_amd64.tar.gz"
+          archive="$RUNNER_TEMP/linebind_0.2.0_linux_amd64.tar.gz"
           curl --fail --silent --show-error --location --retry 3 \
-            https://github.com/mchl-schrdng/linebind/releases/download/v0.1.0/linebind_0.1.0_linux_amd64.tar.gz \
+            https://github.com/mchl-schrdng/linebind/releases/download/v0.2.0/linebind_0.2.0_linux_amd64.tar.gz \
             --output "$archive"
-          printf '359cf99205a0a0abd9af7f12434045eea1619635499d6d890ab09f4735a7ea3d  %s\n' "$archive" \
+          printf '5f711d074d2038fe09522c3f8fd13082e50c9222af0ae7d85af6b84cf71a666f  %s\n' "$archive" \
             | sha256sum --check --strict
           tar -xzf "$archive" -C "$RUNNER_TEMP/linebind-bin" linebind
           "$RUNNER_TEMP/linebind-bin/linebind" --version
 
-      - name: Check the candidate against the base contract
+      - name: Validate the candidate under its proposed contract
         run: |
           mkdir -p "$RUNNER_TEMP/linebind-report"
           set -o pipefail
-          "$RUNNER_TEMP/linebind-bin/linebind" check \
+          "$RUNNER_TEMP/linebind-bin/linebind" preview \
             --repo "$GITHUB_WORKSPACE" \
             --base "$BASE_SHA" --head "$HEAD_SHA" \
             --format json --html "$RUNNER_TEMP/linebind-report/report.html" \

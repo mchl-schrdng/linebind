@@ -87,12 +87,15 @@ For this bootstrap preview, the comparison revision need not contain a contract.
 The candidate supplies the proposed contract. A preview is an experiment, not
 approval. Adopt the first contract through the repository's review process
 before using its approved revision as the base of a required `check` in CI.
-A repository with no initial commit cannot yet be captured by `preview`.
+Our candidate-policy CI workflow can validate the first contract before merge;
+it does not require a contract in the base. A repository with no initial commit
+cannot yet be captured by `preview`.
 
 ## Everyday development
 
-For work under an adopted contract, the agent reads the relevant decisions,
-implements the change, then runs:
+For everyday work, follow the repository's selected CI mode. Our workflow
+validates the candidate contract with `preview`. To separately establish
+compliance with an already adopted contract, use `check`:
 
 ```sh
 linebind check --base "$BASE_SHA" --agent --html .linebind/check.html
@@ -140,12 +143,16 @@ If the request does not authorize changing the decision, the agent prepares a
 concrete alternative and asks only for the unresolved decision. “Make CI green”
 does not by itself authorize weakening the contract.
 
-Approval and incorporation remain controlled by the repository. Linebind has no
-approval-label API or local `approved: true` switch. With a required CI check,
-use the separately controlled maintainer path described in
-[CI integration](ci.md#bootstrap-and-policy-changes). The skill and preview do
-not bypass that process or change branch protection. Never replace the required
-`check` job with `preview`.
+The repository chooses its CI policy. Our workflow uses `preview` as required
+validation of the proposed contract: a valid policy edit alone does not fail,
+and the maintainer adopts it by merging after all required checks pass. No
+second reviewer is required here. The agent follows that configured workflow;
+it must not change the workflow or weaken a rule simply to obtain green.
+
+A repository that chooses `check` as its required gate instead keeps the old
+policy authoritative and needs its own policy-adoption process. Neither mode
+has an approval-label API or a local `approved: true` switch. See
+[CI integration](ci.md#bootstrap-and-policy-changes).
 
 ## What preview establishes
 
@@ -158,7 +165,8 @@ not bypass that process or change branch protection. Never replace the required
 | Exit `1` | Required violation or policy change | Required violation under proposed policy |
 | Exit `2` | Required verification incomplete or operation failed | The same, for proposed-policy analysis |
 | JSON discriminator | No `purpose` field (existing format) | `"purpose": "preview"` |
-| Use as an approved-policy CI gate | Yes, with a trusted base/process | No |
+| CI validates against an already adopted policy | Yes, with a trusted base/process | No |
+| CI validates a proposed policy before maintainer adoption | Policy edits fail the gate | Yes; adopted only through the repository process |
 
 Preview HTML, terminal output and copied diagnostics are explicitly labelled
 **PREVIEW / NOT APPROVED**. Saved preview JSON retains that purpose when rendered

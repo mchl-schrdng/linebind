@@ -29,8 +29,9 @@ A new dependency. A missing API operation. A deployment setting changed in a
 routine refactor. Whether a person or an agent made the change, the question is
 the same: does it still respect the decisions your project relies on?
 
-Linebind reads a contract from a chosen Git base and checks a candidate commit
-or working tree against it. Each rule has a reason, a scope and a verification
+Linebind checks a candidate commit or working tree against a versioned contract.
+Use the base contract to enforce adopted decisions, or the candidate contract
+to validate a proposed evolution. Each rule has a reason, a scope and a verification
 method. The result keeps the evidence, the comparison and the limits together.
 
 - **Make the boundary explicit.** Commit a `.linebind.yml` alongside your code.
@@ -255,8 +256,9 @@ linebind preview --base "$BASE_SHA" --agent --html .linebind/preview.html
 ```
 
 `check` evaluates the base's approved policy. `preview` tries the candidate's
-proposed policy and labels its evidence **not approved**. A successful preview
-does not approve a contract or replace the required CI check. Both commands
+proposed policy and labels its evidence **not approved**. Our CI uses `preview`
+to validate the proposed rules; the maintainer adopts them by merging the PR.
+A contract edit alone does not fail that validation. Both commands
 inspect the working tree by default and accept `--head` for a commit.
 
 See [Working with coding agents](docs/agents.md) for first-contract setup,
@@ -270,22 +272,25 @@ how its violations are tested and what remains outside its coverage.
 
 The same check can run before a build or deployment. The complete
 [GitHub Actions workflow](.github/workflows/contract.yml) pins the published
-Linebind binary and its checksum, loads the reviewed base commit, and checks the
-PR's exact head commit. JSON remains visible in the job log; JSON and HTML are
+Linebind binary and its checksum, compares explicit base/head commits, and
+validates the PR head under its proposed contract. JSON remains visible in the job log; JSON and HTML are
 retained as downloadable artifacts even when the check fails.
 
 Its core command uses explicit revisions from the pull-request event:
 
 ```sh
-linebind check --base "$BASE_SHA" --head "$HEAD_SHA" \
+linebind preview --base "$BASE_SHA" --head "$HEAD_SHA" \
   --format json --html "$RUNNER_TEMP/linebind-report/report.html" \
   | tee "$RUNNER_TEMP/linebind-report/result.json"
 ```
 
 The workflow uses Bash with `pipefail`, so an exit code of `1` or `2` fails the
-job. Make **Linebind contract** a required check in your branch rules to gate
-merges, or add `needs: contract` to a build job in the same workflow. A reviewed
-merge can then trigger your existing deployment pipeline.
+job. A valid contract change can pass; a required violation, incomplete required
+check or invalid contract cannot. Make **Linebind contract** and your tests
+required in branch rules to block merges, or add `needs: contract` to a build
+job in the same workflow. This repository requires all seven CI checks on
+`main`, with no bypass and no mandatory second reviewer. Merging adopts the
+proposed contract and can trigger your existing deployment pipeline.
 
 See [CI integration](docs/ci.md) for the copyable workflow, first-contract setup,
 policy-change review, artifact access and the workflow's trust boundary.
@@ -295,7 +300,8 @@ policy-change review, artifact access and the workflow's trust boundary.
 **No LLM, API key or model service is involved.** Linebind is a Go executable:
 
 1. Git resolves the chosen base and captures the candidate files.
-2. Linebind parses the base's `.linebind.yml` and selects the declared inputs.
+2. Linebind parses `.linebind.yml` from the base for `check`, or from the
+   candidate for `preview`, and selects the declared inputs.
 3. Native rules inspect those captured bytes. In the frontend example, it parses
    `package.json` and compares dependency names with the approved allowlist.
 4. It records findings, policy changes and incomplete checks, then produces the
@@ -314,14 +320,14 @@ Linebind does not need a connection to the agent's model provider.
 
 ## The contract changes too.
 
-The base supplies the effective contract and any explicitly declared policy
-files. Editing or removing them in the candidate does not replace the rules
-used for that run. The report shows the change and asks for review.
+`check` keeps using the base contract and reports policy edits as review-required.
+`preview` evaluates the candidate contract and displays those edits without
+failing merely because the rules changed. Both keep the comparison base fixed.
 
-Legitimate changes belong in the review process: explain the new decision,
-review the affected rules and policy files, then adopt the approved revision as
-the next base. Linebind does not interpret a PR label or an approval field as
-authorization. The [trust model](docs/trust-model.md) describes the complete
+Our PR workflow uses `preview`: explain the new decision, review its effect on
+coverage, and merge when the tests and proposed rules pass. The merge adopts
+the contract. Linebind does not interpret a PR label or a local approval field
+as authorization. The [trust model](docs/trust-model.md) describes the complete
 boundary and the policy-change workflow.
 
 For an existing repository, `compare: new` checks for additional findings while
@@ -350,7 +356,7 @@ When a required violation and an incomplete check coexist, the exit code is `1`;
 the incomplete check and its diagnostics remain visible.
 
 `preview` uses the same statuses for proposed-policy analysis, but policy
-differences alone do not fail that experiment. It never establishes approval;
+differences alone do not fail that validation. It never establishes approval;
 see the [command comparison](docs/agents.md#what-preview-establishes).
 
 Native checks do not execute project code. A `command` rule stays unverified

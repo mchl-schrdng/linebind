@@ -12,9 +12,9 @@ You need Git and Go 1.26 or newer. From the repository root:
 go test ./...
 go vet ./...
 gofmt -w cmd internal scripts
-go build -o linebind ./cmd/linebind
-go run ./scripts/smoke -binary ./linebind
-go run ./scripts/pilots -binary ./linebind
+go build -o ./bin/linebind ./cmd/linebind
+go run ./scripts/smoke -binary ./bin/linebind
+go run ./scripts/pilots -binary ./bin/linebind
 ```
 
 The smoke check uses a temporary Git repository outside this checkout, including
@@ -39,6 +39,13 @@ The race detector requires a supported C toolchain. CI disables npm lifecycle
 scripts and verifies the conftest release archive against its pinned upstream
 SHA-256 before execution. These integration fixtures belong to Linebind; the
 job does not execute commands from the public p-limit pilot.
+
+## Merging changes
+
+All seven required CI checks must pass before merging into `main`, including
+contract validation. No bypass or second reviewer is configured. Contract edits
+are normal: CI validates the proposed rules with `preview`, and the maintainer
+reviews the diff before merging. See [CI integration](docs/ci.md).
 
 ## Release packaging
 

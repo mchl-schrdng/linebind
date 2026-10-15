@@ -16,8 +16,10 @@ passing result nor a well-written contract establishes whole-repository quality.
 - Use `linebind` on `PATH` or the executable path supplied by the user. Read
   [the operating reference](references/operations.md) for prerequisites,
   commands, result interpretation, or a missing executable.
-- For a gate, obtain the agreed trusted base from the task or repository's
-  documented workflow. Resolve it to a full commit SHA and keep that SHA fixed
+- Read which CI mode the repository has chosen: `check` enforces adopted rules;
+  `preview` validates proposed rules before maintainer adoption. Follow that
+  workflow without treating a passing proposal as approval.
+- Obtain the agreed base from the task or repository's documented workflow. Resolve it to a full commit SHA and keep that SHA fixed
   during the task. A branch name alone does not establish approval. Do not use
   the candidate as its own approved base to make a result pass.
 - If an approved-base check has no designated base, prepare independent work
@@ -43,7 +45,8 @@ the contract. Do not create a commit merely to manufacture approval.
 
 ### Develop under an existing contract
 
-Implement the requested change and run `check` against the fixed approved base.
+Implement the requested change and run the repository's configured validation.
+Use `check` against the fixed approved base when adopted-policy evidence is needed.
 Read the checks, diagnostics, and policy changes, not just the exit code. Correct
 accidental violations in the code when the task's intended behavior can be
 preserved. Continue ordinary compliant work without requesting permission.
@@ -65,7 +68,10 @@ user. A generic request to fix CI is not a decision to relax a boundary.
 Explain which rule changes, why, and what protection is added or removed. Keep
 two distinct pieces of evidence: `check` against the original approved base,
 and `preview` of the proposed contract against the same comparison base. The
-preview may pass while the gate still requires policy review. Do not claim that
+preview may pass while the old-policy check reports the change. If CI uses
+`preview`, a policy edit alone must not fail it; the maintainer adopts the
+proposal through the documented merge process after required CI passes. If CI
+uses `check`, retain its stricter adoption process. Do not claim that
 conversation authorization, a successful preview, or a PR label bypasses the
 repository's approval process. Adopt a new trusted base only after that process
 has actually completed.

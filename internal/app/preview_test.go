@@ -33,7 +33,7 @@ func TestPreviewBootstrapsWithoutApprovingTheFirstContract(t *testing.T) {
 	}
 }
 
-func TestPreviewCannotReplaceTheApprovedGate(t *testing.T) {
+func TestPreviewUsesProposedPolicyWithoutApprovingIt(t *testing.T) {
 	dir, opt := checkRepo(t, testContract, "allowed\n")
 	proposed := strings.ReplaceAll(testContract, "pattern: banned", "pattern: permitted")
 	put(t, dir, ".linebind.yml", proposed)

@@ -130,7 +130,7 @@ func TestPreservesGuidanceAndContractFromSubdirectory(t *testing.T) {
 		if !bytes.HasPrefix(data, []byte(texts[name])) || bytes.Count(data, []byte(blockStart)) != 1 {
 			t.Fatalf("%s was not preserved: %s", name, data)
 		}
-		if !bytes.Contains(data, []byte(".linebind.yml")) || !bytes.Contains(data, []byte("--base <approved-ref>")) {
+		if !bytes.Contains(data, []byte(".linebind.yml")) || !bytes.Contains(data, []byte("--base <base-sha>")) {
 			t.Fatalf("missing contract guidance in %s", name)
 		}
 		if name == "CLAUDE.md" && bytes.Contains(data, []byte("@AGENTS.md")) {
