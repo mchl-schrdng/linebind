@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="625" viewBox="0 0 1200 625" role="img" aria-labelledby="title description">
+<title id="title">Linebind catches an unapproved frontend dependency</title>
+<desc id="description">A faithful rendering of captured Linebind v0.1.0 stdout, with visual line wrapping. The example adds jQuery to a React application whose reviewed contract allows only React and React DOM. Exit code 1. This is not a Terminal screenshot.</desc>
+<rect width="1200" height="625" rx="20" fill="#111820"/>
+<path d="M0 76H1200" stroke="#2d3743"/>
+<circle cx="36" cy="38" r="6" fill="#74808d"/>
+<circle cx="59" cy="38" r="6" fill="#536170"/>
+<circle cx="82" cy="38" r="6" fill="#3b4958"/>
+<text x="600" y="45" text-anchor="middle" fill="#b8c4d1" font-family="Menlo,monospace" font-size="17">react-storefront · feature/product-carousel</text>
+<text x="44" y="124" fill="#a2b5ff" font-family="Menlo,monospace" font-size="18">$ linebind check --base main --html .linebind/report.html</text>
+<text x="44" y="174" fill="#ffc7a8" font-family="Menlo,monospace" font-size="18" xml:space="preserve">Linebind v0.1.0 — Crossed</text>
+<text x="44" y="203" fill="#a9b7c6" font-family="Menlo,monospace" font-size="18" xml:space="preserve">Repository: react-storefront</text>
+<text x="44" y="232" fill="#a9b7c6" font-family="Menlo,monospace" font-size="18" xml:space="preserve">Comparison: 24b7113e3af4d25457d2e9b85ab87f27203e12d6 →</text>
+<text x="44" y="261" fill="#a9b7c6" font-family="Menlo,monospace" font-size="18" xml:space="preserve">  worktree:24b7113e3af4d25457d2e9b85ab87f27203e12d6:4500cc963be6</text>
+<text x="44" y="290" fill="#e8edf2" font-family="Menlo,monospace" font-size="18" xml:space="preserve"></text>
+<text x="44" y="319" fill="#ffc7a8" font-family="Menlo,monospace" font-size="18" xml:space="preserve">[Crossed] frontend.runtime-dependencies (required; Native check)</text>
+<text x="44" y="348" fill="#e8edf2" font-family="Menlo,monospace" font-size="18" xml:space="preserve">Reason: The browser bundle uses React; new runtime packages require a separate decision.</text>
+<text x="44" y="377" fill="#e8edf2" font-family="Menlo,monospace" font-size="18" xml:space="preserve">Declared inputs: package.json</text>
+<text x="44" y="406" fill="#e8edf2" font-family="Menlo,monospace" font-size="18" xml:space="preserve">- [Not comparable] package.json → jquery</text>
+<text x="44" y="435" fill="#e8edf2" font-family="Menlo,monospace" font-size="18" xml:space="preserve">  Direct dependency is not permitted: jquery</text>
+<text x="44" y="464" fill="#e8edf2" font-family="Menlo,monospace" font-size="18" xml:space="preserve">  Next: Remove the new runtime dependency or propose a reviewed contract change.</text>
+<text x="44" y="493" fill="#e8edf2" font-family="Menlo,monospace" font-size="18" xml:space="preserve"></text>
+<text x="44" y="522" fill="#e8edf2" font-family="Menlo,monospace" font-size="18" xml:space="preserve">Results apply only to the declared checks and recorded inputs.</text>
+<path d="M44 556H1156" stroke="#2d3743"/>
+<text x="44" y="590" fill="#a9b7c6" font-family="Menlo,monospace" font-size="16">Captured CLI output · v0.1.0 · seeded frontend example</text>
+<text x="1156" y="590" text-anchor="end" fill="#ffc7a8" font-family="Menlo,monospace" font-size="16">exit 1</text>
+</svg>

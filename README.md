@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="#get-started">Get started</a> ·
+  <a href="#a-frontend-change-in-practice">A real workflow</a> ·
   <a href="docs/configuration.md">Write a contract</a> ·
   <a href="docs/examples.md">Try the examples</a>
 </p>
@@ -50,7 +51,7 @@ for macOS, Linux or Windows, on Intel/AMD or ARM64. Extract the archive and put
 `linebind` (`linebind.exe` on Windows) on your `PATH`.
 See [installation](docs/installation.md) for archive names and checksum checks.
 
-Linebind requires Git. Go is needed only when building from source:
+Linebind requires Git. The distributed binary runs without Go. For a source build:
 
 <details>
 <summary>Build this checkout with Go 1.26 or newer</summary>
@@ -97,30 +98,65 @@ Both revisions must already be available locally. Pick the base deliberately:
 Linebind uses the revision you provide, rather than deciding which change your
 team has approved.
 
-## A small contract, in plain sight.
+## A frontend change in practice
 
-For a repository with a committed OpenAPI document, this rule keeps an existing
-operation in the declared API surface:
+You ask an agent to add a product carousel to a React storefront. It adds jQuery
+to implement the feature. The team's decision was to review every new runtime
+dependency, so the approved contract on `main` contains:
 
 ```yaml
 version: 1
-name: Service contract
+name: Frontend runtime dependencies
 
 rules:
-  - id: health-endpoint-stays-declared
-    kind: document
-    reason: Our clients depend on the GET /health operation.
-    scope: [api/openapi.yaml]
-    remediation: Restore the operation, or propose a reviewed API change.
-    document:
-      selector: /paths/~1health/get
-      required: true
+  - id: frontend.runtime-dependencies
+    kind: dependencies
+    reason: The browser bundle uses React; new runtime packages require a separate decision.
+    scope: [package.json]
+    dependencies:
+      format: npm
+      sections: [dependencies]
+      allow: [react, react-dom]
+    remediation: Remove the new runtime dependency or propose a reviewed contract change.
 ```
 
-This checks the document, not the running service. A removed operation produces
-a finding; an unreadable document leaves the check unverified. See the
-[configuration reference](docs/configuration.md) for dependency policies,
-lexical checks, file requirements and external commands.
+On the feature branch, `package.json` changes:
+
+```diff
+ "dependencies": {
+   "react": "19.0.0",
+-  "react-dom": "19.0.0"
++  "react-dom": "19.0.0",
++  "jquery": "3.7.1"
+ }
+```
+
+With that reviewed contract already committed on `main`, check the feature
+branch's working tree:
+
+```sh
+linebind check --base main --html .linebind/report.html
+```
+
+![Actual Linebind CLI output: jQuery violates the reviewed frontend dependency contract, exit 1](docs/assets/frontend-cli.png)
+
+<p align="center"><sub>Actual v0.1.0 stdout, rendered as an image with line wrapping. <a href="docs/assets/frontend-cli.txt">Plain text</a> · <a href="docs/assets/frontend-cli.json">JSON evidence</a> · <a href="docs/assets/README.md#cli-output">Capture notes</a></sub></p>
+
+The check returns `crossed` and exits with `1`. Its evidence identifies the
+dependency, the reason for the rule and the next action. Adding jQuery to the
+candidate's allowlist does not authorize it: this run still uses the contract
+from `main` and reports the policy change separately.
+
+The team can remove the dependency or review a contract change. This rule checks
+declared dependency names in `dependencies`; it does not judge carousel behavior,
+package versions or vulnerabilities. `Not comparable` in this output means the
+rule uses the default strict mode; `compare: new` enables finding evolution.
+
+The repository includes the [exact fixture](examples/frontend/base/.linebind.yml).
+To reproduce its passing, crossed, malformed-input and removed-contract states,
+use Go 1.26+ and an installed binary, then run
+`go run ./scripts/pilots -binary /path/to/linebind` from this checkout.
+No application dependencies are installed or executed.
 
 The [runnable examples](docs/examples.md) cover four different contexts:
 
@@ -133,6 +169,52 @@ The [runnable examples](docs/examples.md) cover four different contexts:
 
 These are focused examples. They do not install packages, call a live API,
 validate dataset rows or apply infrastructure.
+
+## In a pull request
+
+The same check can run before a build or deployment. The complete
+[GitHub Actions workflow](.github/workflows/contract.yml) pins the published
+Linebind binary and its checksum, loads the reviewed base commit, and checks the
+PR's exact head commit. JSON remains visible in the job log; JSON and HTML are
+retained as downloadable artifacts even when the check fails.
+
+Its core command uses explicit revisions from the pull-request event:
+
+```sh
+linebind check --base "$BASE_SHA" --head "$HEAD_SHA" \
+  --format json --html "$RUNNER_TEMP/linebind-report/report.html" \
+  | tee "$RUNNER_TEMP/linebind-report/result.json"
+```
+
+The workflow uses Bash with `pipefail`, so an exit code of `1` or `2` fails the
+job. Make **Linebind contract** a required check in your branch rules to gate
+merges, or add `needs: contract` to a build job in the same workflow. A reviewed
+merge can then trigger your existing deployment pipeline.
+
+See [CI integration](docs/ci.md) for the copyable workflow, first-contract setup,
+policy-change review, artifact access and the workflow's trust boundary.
+
+## How the check works
+
+**No LLM, API key or model service is involved.** Linebind is a Go executable:
+
+1. Git resolves the chosen base and captures the candidate files.
+2. Linebind parses the base's `.linebind.yml` and selects the declared inputs.
+3. Native rules inspect those captured bytes. In the frontend example, it parses
+   `package.json` and compares dependency names with the approved allowlist.
+4. It records findings, policy changes and incomplete checks, then produces the
+   exit code, terminal/JSON output and offline HTML report.
+
+`reason` and `remediation` explain a rule to people and agents; the check is
+defined by `kind`, `scope` and its parameters. Free-form prose is not interpreted
+as an executable rule. With the same captured inputs and contract, native checks
+produce the same findings; timestamps and execution durations can differ.
+
+Native checking makes no model calls and uploads no source code. Optional
+`command` rules require `--allow-exec` and invoke the external tool you configure;
+that tool may have its own network or credential requirements.
+A coding agent can invoke the same CLI and read its JSON or `--agent` diagnostics;
+Linebind does not need a connection to the agent's model provider.
 
 ## The contract changes too.
 
