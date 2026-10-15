@@ -43,6 +43,8 @@ Run `linebind init` inside the Git repository you want to check. Review and
 commit the generated contract before using that commit as `--base`. The
 [README](../README.md#get-started) walks through the first check.
 
+## Build from source
+
 To build from source, use Git and Go 1.26 or newer:
 
 ```sh
@@ -54,3 +56,12 @@ go build -o ./bin/linebind ./cmd/linebind
 A source build reports `dev` unless version metadata is explicitly supplied.
 Release builds use the pinned toolchain and metadata described in
 [Contributing](../CONTRIBUTING.md#release-packaging).
+
+## Coding-agent integration
+
+The agent-workflow version bundles a skill for Codex, Claude Code and
+Antigravity. After installing that executable, run
+`linebind setup --agent all` in your project. You do not need to copy this
+repository or install Go in the consuming project. See the
+[agent workflow](agents.md) for version availability, installation targets,
+first-contract setup and deliberate policy changes.

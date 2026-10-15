@@ -16,6 +16,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/mchl-schrdng/linebind/internal/agentsetup"
 	"github.com/mchl-schrdng/linebind/internal/app"
 	"github.com/mchl-schrdng/linebind/internal/contract"
 	"github.com/mchl-schrdng/linebind/internal/jsonstrict"
@@ -30,23 +31,29 @@ var commit = "unknown"
 const help = `Linebind — Your repository. Your contract.
 
 Usage:
+  linebind setup --agent codex|claude|antigravity|all [--repo DIR] [--dry-run]
   linebind init [--repo DIR] [--contract .linebind.yml]
   linebind validate [--repo DIR] [--contract .linebind.yml]
   linebind check --base REF [--head REF|worktree] [options]
+  linebind preview --base REF [--head REF|worktree] [options]
   linebind report INPUT.json [--output .linebind/report.html]
   linebind --version
 
-Check options:
+Check and preview options:
   --repo DIR         Git repository (default .)
   --contract PATH    Repository-relative contract (default .linebind.yml)
-  --base REF         Approved revision supplying the contract; required
+  --base REF         Required reference; check reads its approved contract
   --head REF         Candidate revision, or worktree (default worktree)
   --format FORMAT    text or json (default text)
   --agent           Compact plain-text evidence with input identifiers
   --output PATH     Save text/JSON instead of writing it to stdout
   --html PATH       Also save the standalone HTML report
-  --allow-exec      Allow approved commands on this host (not a sandbox)
+  --allow-exec      Allow policy commands on this host (not a sandbox)
 
+Setup installs the bundled skill and repository instructions without network
+access. It preserves existing content and does not create or approve a contract.
+Preview uses the candidate contract; its base is only a comparison reference.
+Preview results describe proposed rules, never approval or a passing CI gate.
 Native checks never execute project code. Missing or incomplete evidence is
 unverified. Exit codes: 0 = gate passed, 1 = required violation or policy
 change, 2 = required verification incomplete or operational error.
@@ -120,21 +127,47 @@ func run(args []string, out, errOut io.Writer) int {
 		fmt.Fprintln(errOut, "Report saved:", safeText(*output))
 		return 0
 	}
-	if command != "init" && command != "validate" && command != "check" {
+	if command == "setup" {
+		repoDir := fs.String("repo", ".", "Git repository")
+		agent := fs.String("agent", "", "codex, claude, antigravity or all")
+		dryRun := fs.Bool("dry-run", false, "show planned writes without changing files")
+		if err := fs.Parse(args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				return 0
+			}
+			return 2
+		}
+		if fs.NArg() != 0 {
+			return fail(fmt.Errorf("setup accepts options only; use --agent codex|claude|antigravity|all"))
+		}
+		changes, err := agentsetup.Setup(*repoDir, *agent, *dryRun)
+		if err != nil {
+			return fail(err)
+		}
+		if *dryRun {
+			fmt.Fprintln(out, "Setup preview; no files written.")
+		}
+		for _, change := range changes {
+			fmt.Fprintf(out, "%s %s\n", safeText(change.Action), safeText(change.Path))
+		}
+		fmt.Fprintln(out, "The bundled skill uses this Linebind CLI. No contract was created or approved. Review and commit the integration files; reload skills or start a new agent session if needed.")
+		return 0
+	}
+	if command != "init" && command != "validate" && command != "check" && command != "preview" {
 		return fail(fmt.Errorf("unknown command %q; use --help", command))
 	}
 	repoDir := fs.String("repo", ".", "Git repository")
 	contractPath := fs.String("contract", ".linebind.yml", "repository-relative contract")
 	var base, head, format, output, html string
 	var agent, allowExec bool
-	if command == "check" {
-		fs.StringVar(&base, "base", "", "approved revision")
+	if command == "check" || command == "preview" {
+		fs.StringVar(&base, "base", "", "reference revision; approved policy source for check")
 		fs.StringVar(&head, "head", "worktree", "candidate revision")
 		fs.StringVar(&format, "format", "text", "text or json")
 		fs.StringVar(&output, "output", "", "text or JSON report path")
 		fs.StringVar(&html, "html", "", "HTML report path")
 		fs.BoolVar(&agent, "agent", false, "plain-text evidence for an agent")
-		fs.BoolVar(&allowExec, "allow-exec", false, "execute approved project commands on this host")
+		fs.BoolVar(&allowExec, "allow-exec", false, "execute policy commands on this host")
 	}
 	if err := fs.Parse(args[1:]); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -196,7 +229,7 @@ func run(args []string, out, errOut io.Writer) int {
 		return 0
 	}
 	if base == "" {
-		return fail(fmt.Errorf("check requires --base: choose the approved revision explicitly"))
+		return fail(fmt.Errorf("%s requires --base: choose the reference revision explicitly (an approved policy source for check)", command))
 	}
 	if format != "text" && format != "json" {
 		return fail(fmt.Errorf("format must be text or json"))
@@ -211,7 +244,13 @@ func run(args []string, out, errOut io.Writer) int {
 			return fail(fmt.Errorf("--output and --html must be different paths"))
 		}
 	}
-	r := app.Check(app.Options{Repo: *repoDir, Base: base, Head: head, Contract: *contractPath, Version: version, AllowExec: allowExec})
+	opt := app.Options{Repo: *repoDir, Base: base, Head: head, Contract: *contractPath, Version: version, AllowExec: allowExec}
+	var r model.Report
+	if command == "preview" {
+		r = app.Preview(opt)
+	} else {
+		r = app.Check(opt)
+	}
 	var data bytes.Buffer
 	if format == "json" {
 		e := json.NewEncoder(&data)
@@ -411,7 +450,7 @@ func loadReport(data []byte) (model.Report, error) {
 		return r, fmt.Errorf("expected one JSON report")
 	}
 	_, dateErr := time.Parse(time.RFC3339, r.GeneratedAt)
-	if r.SchemaVersion != 1 || r.Version == "" || dateErr != nil || !validStatus(r.Status) || r.ExitCode < 0 || r.ExitCode > 2 {
+	if r.SchemaVersion != 1 || (r.Purpose != "" && r.Purpose != "preview") || r.Version == "" || dateErr != nil || !validStatus(r.Status) || r.ExitCode < 0 || r.ExitCode > 2 {
 		return r, fmt.Errorf("unsupported or incomplete Linebind report")
 	}
 	if len(r.Checks) == 0 {
@@ -442,7 +481,7 @@ func loadReport(data []byte) (model.Report, error) {
 			}
 		}
 	}
-	if len(r.Changes) > 0 && (r.Status != "crossed" || r.ExitCode != 1) {
+	if r.Purpose != "preview" && len(r.Changes) > 0 && (r.Status != "crossed" || r.ExitCode != 1) {
 		return r, fmt.Errorf("report gate contradicts contract changes")
 	}
 	for _, change := range r.Changes {

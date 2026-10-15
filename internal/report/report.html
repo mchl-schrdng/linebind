@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
-  <title>{{.Name}} · Linebind report</title>
+  <title>{{.Name}} · Linebind {{if eq .Purpose "preview"}}preview — not approved{{else}}report{{end}}</title>
   <style>
     :root{--paper:#f6f5f1;--surface:#fffefa;--ink:#252825;--muted:#666b65;--line:#d9ddd5;--blue:#355c76;--blue-soft:#e9eff1;--crossed:#a33d2b;--crossed-soft:#f8ece6;--passed:#3c6350;--passed-soft:#edf2ec;--unverified:#806021;--unverified-soft:#f5efdf;--mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
     *{box-sizing:border-box}
@@ -136,6 +136,10 @@
       <span class="masthead-note">Your rules. In view.</span>
     </header>
     <main id="report">
+      {{if eq .Purpose "preview"}}<section class="notice" aria-labelledby="preview-title" style="margin-top:24px">
+        <h2 class="notice-head" id="preview-title">Preview / not approved</h2>
+        <p>This analysis uses the candidate contract and policy files. It does not approve a contract change or replace the approved-base CI check. Its exit code describes the proposed checks only.</p>
+      </section>{{end}}
       <section class="hero" aria-labelledby="report-title">
         <div class="repo-row">
           <div class="repository"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 3.5h4L7.5 5H14v8H2z" stroke="currentColor" stroke-width="1.2"/></svg><strong>{{.Name}}</strong><span>/ local report</span></div>
@@ -176,6 +180,7 @@
           </section>{{else}}<div class="no-rules">{{if .Diagnostics}}<p>No check results are available.</p><p>Resolve the report diagnostics, then run the check again.</p>{{else}}<p>No checks were declared.</p><p>This report does not establish that the repository meets any project rules.</p>{{end}}</div>{{end}}</div>
       </div>
       <details class="provenance"><summary>Report provenance</summary><dl>
+        {{if eq .Purpose "preview"}}<dt>Purpose</dt><dd>Preview / not approved</dd><dt>Policy source</dt><dd>Candidate</dd>{{end}}
         <dt>Repository</dt><dd>{{.Repository}}</dd><dt>Base</dt><dd>{{.Base}}</dd><dt>Candidate</dt><dd>{{.Candidate}}</dd>
         <dt>Contract</dt><dd>{{.ContractPath}}</dd><dt>Contract hash</dt><dd>{{.ContractHash}}</dd><dt>Input digest</dt><dd>{{.InputDigest}}</dd>
         <dt>Generated</dt><dd>{{time .GeneratedAt}}</dd><dt>Report schema</dt><dd>{{.SchemaVersion}}</dd><dt>Linebind version</dt><dd>{{.Version}}</dd><dt>Exit code</dt><dd>{{.ExitCode}}</dd>

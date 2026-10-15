@@ -60,6 +60,16 @@ func Render(w io.Writer, result model.Report) error {
 	default:
 		data.Title = "Verification is incomplete."
 	}
+	if result.Purpose == "preview" {
+		switch state(result.Status) {
+		case "passed":
+			data.Title = "Proposed checks passed."
+		case "crossed":
+			data.Title = "A proposed boundary was crossed."
+		default:
+			data.Title = "Proposed checks are incomplete."
+		}
+	}
 	if len(result.Checks) == 0 {
 		data.Title = "No checks were declared."
 		if len(result.Diagnostics) > 0 {
@@ -83,7 +93,12 @@ func Render(w io.Writer, result model.Report) error {
 // contract identifiers so a copied diagnostic remains tied to its analysis.
 func Text(w io.Writer, result model.Report, agent bool) error {
 	var out bytes.Buffer
-	fmt.Fprintf(&out, "Linebind %s — %s\n", result.Version, statusLabel(result.Status))
+	if result.Purpose == "preview" {
+		fmt.Fprintf(&out, "Linebind %s — PREVIEW / NOT APPROVED — %s\n", result.Version, statusLabel(result.Status))
+		fmt.Fprintln(&out, "Uses the candidate contract and policy files. The exit code describes proposed checks only; this is not a CI gate or policy approval.")
+	} else {
+		fmt.Fprintf(&out, "Linebind %s — %s\n", result.Version, statusLabel(result.Status))
+	}
 	fmt.Fprintf(&out, "Repository: %s\nComparison: %s → %s\n", result.Repository, result.Base, result.Candidate)
 	if agent {
 		fmt.Fprintf(&out, "Contract: %s\nContract hash: %s\nInput digest: %s\n", result.ContractPath, result.ContractHash, result.InputDigest)

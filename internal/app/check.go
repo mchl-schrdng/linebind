@@ -22,12 +22,24 @@ type Options struct {
 }
 
 func Check(opt Options) model.Report {
-	r := model.Report{SchemaVersion: 1, Version: opt.Version, Repository: filepath.Base(opt.Repo), Base: opt.Base, Candidate: opt.Head,
+	return evaluate(opt, "")
+}
+
+// Preview evaluates candidate policy without approving it or changing Check's gate.
+func Preview(opt Options) model.Report {
+	return evaluate(opt, "preview")
+}
+
+func evaluate(opt Options, purpose string) model.Report {
+	r := model.Report{SchemaVersion: 1, Purpose: purpose, Version: opt.Version, Repository: filepath.Base(opt.Repo), Base: opt.Base, Candidate: opt.Head,
 		ContractPath: opt.Contract, GeneratedAt: time.Now().UTC().Format(time.RFC3339), Status: "unverified", ExitCode: 2,
 		Changes: []model.ContractChange{}, Checks: []model.Check{}, Diagnostics: []string{}}
+	if purpose == "preview" {
+		r.Diagnostics = append(r.Diagnostics, "Preview only: the candidate supplies the proposed contract and policy files. This analysis does not approve policy changes or replace an approved-base check.")
+	}
 	fail := func(err error) model.Report {
 		r.Diagnostics = append(r.Diagnostics, err.Error())
-		if len(r.Changes) > 0 {
+		if len(r.Changes) > 0 && purpose != "preview" {
 			r.Status = "crossed"
 			r.ExitCode = 1
 		}
@@ -57,14 +69,21 @@ func Check(opt Options) model.Report {
 	}
 	r.Candidate = candidate.Identity
 	r.InputDigest = candidate.Digest
-	raw, ok := base.Files[opt.Contract]
+	policySource, policyLabel := base, "approved"
+	if purpose == "preview" {
+		policySource, policyLabel = candidate, "proposed"
+	}
+	raw, ok := policySource.Files[opt.Contract]
 	if !ok {
+		if purpose == "preview" {
+			return fail(fmt.Errorf("candidate has no readable proposed contract at %s", opt.Contract))
+		}
 		return fail(fmt.Errorf("approved base has no readable %s; commit and approve a contract before checking changes", opt.Contract))
 	}
 	r.ContractHash = digest(raw)
 	c, err := contract.Load(raw)
 	if err != nil {
-		return fail(fmt.Errorf("approved contract invalid: %w", err))
+		return fail(fmt.Errorf("%s contract invalid: %w", policyLabel, err))
 	}
 	policy := map[string]bool{opt.Contract: true}
 	for _, rule := range c.Rules {
@@ -74,30 +93,63 @@ func Check(opt Options) model.Report {
 			}
 		}
 	}
+	if purpose == "preview" {
+		for _, rule := range c.Rules {
+			if rule.Command != nil {
+				for _, name := range rule.Command.PolicyFiles {
+					if _, exists := candidate.Files[name]; !exists {
+						return fail(fmt.Errorf("proposed policy file %s is unavailable", name))
+					}
+				}
+			}
+		}
+		// Include removed declarations in the review diff without requiring an old contract at bootstrap.
+		if previous, err := contract.Load(base.Files[opt.Contract]); err == nil {
+			for _, rule := range previous.Rules {
+				if rule.Command != nil {
+					for _, name := range rule.Command.PolicyFiles {
+						policy[name] = true
+					}
+				}
+			}
+		}
+	}
 	names := make([]string, 0, len(policy))
 	for name := range policy {
 		names = append(names, name)
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		approved, exists := base.Files[name]
-		if !exists {
+		approved, approvedExists := base.Files[name]
+		if purpose != "preview" && !approvedExists {
 			return fail(fmt.Errorf("approved policy file %s is unavailable", name))
 		}
-		proposed, exists := candidate.Files[name]
-		if !exists {
-			r.Changes = append(r.Changes, model.ContractChange{Path: name, Change: "removed", Detail: "Approved policy file is absent from the candidate; the approved version remains effective."})
-		} else if !policyEqual(approved, proposed) || base.Executable[name] != candidate.Executable[name] {
-			r.Changes = append(r.Changes, model.ContractChange{Path: name, Change: "modified", Detail: "Candidate policy differs from the approved revision; the approved version remains effective."})
+		proposed, proposedExists := candidate.Files[name]
+		change, detail := "", ""
+		switch {
+		case !approvedExists && proposedExists:
+			change, detail = "added", "Candidate policy file is absent from the comparison base."
+		case approvedExists && !proposedExists:
+			change, detail = "removed", "Policy file from the base is absent from the candidate."
+		case approvedExists && proposedExists && (!policyEqual(approved, proposed) || base.Executable[name] != candidate.Executable[name]):
+			change, detail = "modified", "Candidate policy differs from the base revision."
+		}
+		if change != "" {
+			if purpose == "preview" {
+				detail += " This preview uses the proposed policy; review is still required."
+			} else {
+				detail += " The approved version remains effective."
+			}
+			r.Changes = append(r.Changes, model.ContractChange{Path: name, Change: change, Detail: detail})
 		}
 	}
 	r.Checks = contract.Evaluate(c, candidate.Files)
 	previous := contract.Evaluate(c, base.Files)
 	for i, rule := range c.Rules {
 		if rule.Kind == "command" {
-			r.Checks[i] = runCommand(rule, candidate, base, opt.AllowExec)
+			r.Checks[i] = runCommand(rule, candidate, policySource, opt.AllowExec)
 			if rule.Compare == "new" {
-				previous[i] = runCommand(rule, base, base, opt.AllowExec)
+				previous[i] = runCommand(rule, base, policySource, opt.AllowExec)
 			}
 		}
 		markOmissions(rule, candidate, &r.Checks[i])
@@ -203,16 +255,16 @@ func compare(current *model.Check, base model.Check) {
 
 func finalize(r *model.Report) {
 	r.Status, r.ExitCode = Outcome(*r)
-	if len(r.Changes) > 0 {
+	if len(r.Changes) > 0 && r.Purpose != "preview" {
 		r.Diagnostics = append(r.Diagnostics, "Contract changes require review. This run uses the approved base; candidate policy cannot authorize itself.")
 	}
 }
 
-// Outcome derives the aggregate gate from completed check records. Fatal runs
-// without check records retain their explicit operational-error result instead.
+// Outcome aggregates completed checks. Preview policy changes are review evidence,
+// not check failures; fatal runs without checks retain their operational error.
 func Outcome(r model.Report) (status string, exit int) {
 	status = "passed"
-	if len(r.Changes) > 0 {
+	if len(r.Changes) > 0 && r.Purpose != "preview" {
 		status = "crossed"
 		exit = 1
 	}
