@@ -6,7 +6,7 @@ rules:
     reason: Contributors need the product, licensing, configuration and security entry points.
     remediation: Restore the missing public document or propose a reviewed contract update.
     files:
-      require: [README.md, LICENSE, SECURITY.md, docs/configuration.md, docs/trust-model.md]
+      require: [README.md, LICENSE, SECURITY.md, docs/configuration.md, docs/trust-model.md, docs/agents.md, docs/self-contract.md]
   - id: deliberate-direct-dependencies
     kind: dependencies
     reason: Keep the native verifier small and its direct dependencies explicit.
@@ -21,3 +21,20 @@ rules:
     scope: [internal/contract/*.go]
     text:
       pattern: 'exec\.Command|http\.(Get|Post|Do)|os\.(ReadFile|Open|WriteFile)\('
+  - id: bundled-agent-guidance
+    kind: require-files
+    reason: The binary ships the skill and its references so agent setup works offline.
+    remediation: Restore the bundled guidance or propose a reviewed packaging decision.
+    files:
+      require:
+        - internal/agentsetup/skill/SKILL.md
+        - internal/agentsetup/skill/references/operations.md
+        - internal/agentsetup/skill/references/authoring.md
+  - id: report-network-references
+    kind: forbid-text
+    reason: The report is a standalone local HTML file with embedded assets and no network requirement.
+    remediation: Embed the asset or keep the operation local. This lexical check includes comments and does not prove browser behavior.
+    scope: [internal/report/report.html]
+    text:
+      pattern: >-
+        (?i)(?:\b(?:src|href)\s*=\s*["']?\s*(?:https?:)?//|@import\b|url\s*\(\s*["']?\s*(?:https?:)?//|\b(?:fetch|WebSocket|EventSource|XMLHttpRequest)\s*\()

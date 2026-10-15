@@ -264,6 +264,10 @@ the three agent integrations, policy evolution and current verification limits.
 
 ## In a pull request
 
+Linebind checks its own repository with a committed [five-rule contract](.linebind.yml).
+See [our contract and local workflow](docs/self-contract.md) for what it protects,
+how its violations are tested and what remains outside its coverage.
+
 The same check can run before a build or deployment. The complete
 [GitHub Actions workflow](.github/workflows/contract.yml) pins the published
 Linebind binary and its checksum, loads the reviewed base commit, and checks the

@@ -1,5 +1,22 @@
 # Validation
 
+## Linebind's own contract
+
+The [self-contract](self-contract.md) is tested against this repository's
+captured source, not a separate hand-written copy of the YAML. Run
+`go test ./internal/app -run '^TestOwnRepositoryContract$' -v` to exercise the
+passing source and sixteen isolated variations. They cover all five rules,
+HTML/CSS/JavaScript network references, allowed local/embedded references and
+incomplete evidence when the report template is absent.
+
+The published v0.2.0 CLI was also run on a disposable local clone on 2026-10-15:
+the old-base check returned 1 for policy review while all three old checks
+passed; the proposed five-rule preview returned 0; one violation of each rule
+returned 1; a local report anchor returned 0; and a missing report template
+returned 2. No mutated source was executed and no dependencies were downloaded.
+These nine CLI cases complement the source tests; the lexical rules' limits
+remain those documented in the self-contract guide.
+
 ## Agent workflow (v0.2.0)
 
 The agent integration was exercised locally on macOS ARM64 on 2026-10-15.
