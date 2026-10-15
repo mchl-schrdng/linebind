@@ -128,8 +128,8 @@ func Setup(repoDir, agent string, dryRun bool) ([]Change, error) {
 func instructionBlock(skillDir string) string {
 	return blockStart + "\n## Linebind\n\n" +
 		"Use the Linebind skill at `" + skillDir + "/SKILL.md` to create, check, or evolve this repository's `.linebind.yml` contract.\n" +
-		"Choose `--base` explicitly from the repository's approved revisions; neither `HEAD` nor a candidate contract is approved by default.\n" +
-		"Before finishing changes, run `linebind check --base <approved-ref> --agent` and report violations or incomplete verification.\n" +
+		"Choose an explicit fixed `--base` from the repository workflow; neither `HEAD` nor a candidate contract is approved by default.\n" +
+		"Before finishing changes, run the repository-selected `linebind check --base <base-sha> --agent` or `linebind preview --base <base-sha> --agent`, and report violations or incomplete verification. Preview can validate proposed policy in CI; merging adopts it according to the repository process.\n" +
 		"Correct unintended deviations in the code. For an intentional policy change, prepare the contract diff and verification evidence for the repository's approval process, using existing explicit authorization when applicable. Never weaken rules or change the base merely to obtain a passing result.\n" +
 		blockEnd + "\n"
 }

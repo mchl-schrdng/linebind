@@ -108,6 +108,7 @@ try {
     assert.equal(dom.window.__linebindInjected, undefined);
     assert.equal(document.body.classList.contains('enhanced'), false);
     assert.equal(dom.window.getComputedStyle(document.getElementById('copy-report')).display, 'none');
+    assert.equal(dom.window.getComputedStyle(document.querySelector('.check-filters')).display, 'none');
     const panels = [...document.querySelectorAll('.clause-panel')];
     assert.equal(panels.length, report.checks.length);
     panels.forEach((panel, i) => {
@@ -125,17 +126,17 @@ try {
     for (const link of document.querySelectorAll('a[href^="#"]')) assert.ok(document.querySelector(link.getAttribute('href')));
   });
 
-  await test('native links select checks; valid hashes select and unknown hashes preserve selection', async () => {
+  await test('the first required issue opens by default; native links and explicit hashes remain authoritative', async () => {
     const dom = parse(html, { scripts: true });
     const links = dom.window.document.querySelectorAll('.rule-link');
-    selected(dom, 0);
-    links[1].focus();
-    assert.equal(dom.window.document.activeElement, links[1]);
-    assert.equal(links[1].tagName, 'A');
-    assert.equal(links[1].tabIndex, 0);
-    links[1].click();
     selected(dom, 1);
-    assert.equal(dom.window.location.hash, '#check-1');
+    links[0].focus();
+    assert.equal(dom.window.document.activeElement, links[0]);
+    assert.equal(links[0].tagName, 'A');
+    assert.equal(links[0].tabIndex, 0);
+    links[0].click();
+    selected(dom, 0);
+    assert.equal(dom.window.location.hash, '#check-0');
     dom.window.location.hash = '#check-2';
     await tick();
     selected(dom, 2);
@@ -143,18 +144,49 @@ try {
     await tick();
     selected(dom, 2);
     selected(parse(html, { scripts: true, hash: '#check-2' }), 2);
-    selected(parse(html, { scripts: true, hash: '#unknown' }), 0);
+    selected(parse(html, { scripts: true, hash: '#unknown' }), 1);
+    selected(parse(html, { scripts: true, hash: '#check-0' }), 0);
+  });
+
+  await test('attention filtering keeps incomplete advice visible and deep links restore filtered-out checks', async () => {
+    const dom = parse(html, { scripts: true, hash: '#check-0' });
+    const document = dom.window.document;
+    const all = document.querySelector('[data-filter="all"]');
+    const attention = document.querySelector('[data-filter="attention"]');
+    const links = [...document.querySelectorAll('.rule-link')];
+    attention.focus();
+    attention.click();
+    assert.deepEqual(links.map(link => link.parentElement.hidden), [true, false, false]);
+    assert.equal(attention.getAttribute('aria-pressed'), 'true');
+    assert.equal(all.getAttribute('aria-pressed'), 'false');
+    assert.equal(document.activeElement, attention);
+    assert.equal(document.getElementById('filter-status').textContent, 'Showing 2 of 3 checks.');
+    selected(dom, 1);
+    assert.equal(dom.window.location.hash, '#check-1');
+    links[2].click();
+    selected(dom, 2);
+    all.click();
+    selected(dom, 2);
+    assert.ok(links.every(link => !link.parentElement.hidden));
+    attention.click();
+    dom.window.location.hash = '#check-0';
+    await tick();
+    selected(dom, 0);
+    assert.equal(all.getAttribute('aria-pressed'), 'true');
+    assert.ok(links.every(link => !link.parentElement.hidden));
   });
 
   await test('clipboard receives the exact visible diagnostic as plain text', async () => {
     const copied = [];
     const dom = parse(html, { scripts: true, clipboard: { writeText: async text => copied.push(text) } });
     const document = dom.window.document;
+    document.querySelector('[data-filter="attention"]').click();
     document.getElementById('copy-report').click();
     await tick();
     assert.deepEqual(copied, [document.getElementById('diagnostic-text').textContent]);
     assert.equal(document.getElementById('copy-status').textContent, 'Diagnostic copied.');
     assert.equal(document.querySelector('textarea'), null);
+    assert.ok(copied[0].includes('[Passed] readme-present'), 'filtering must not remove passing checks from the copied evidence');
   });
 
   await test('denied clipboard uses selected plain-text fallback and restores focus after copying', async () => {
@@ -201,6 +233,23 @@ try {
     assert.equal(document.activeElement, button);
   });
 
+  await test('required issues take priority over earlier advice, while advisory-only issues remain discoverable', () => {
+    const proposed = { ...contract, rules: [contract.rules[0], contract.rules[2], contract.rules[1]] };
+    writeFileSync(join(repo, '.linebind.yml'), JSON.stringify(proposed, null, 2));
+    const priorityHTML = join(temp, 'priority.html');
+    const preview = () => spawnSync(resolve(binary), ['preview', '--repo', repo, '--base', 'HEAD', '--html', priorityHTML], { encoding: 'utf8' });
+    const required = preview();
+    assert.equal(required.status, 1, required.stderr || required.error?.message);
+    selected(parse(readFileSync(priorityHTML, 'utf8'), { scripts: true }), 2);
+    writeFileSync(join(repo, 'src/input.txt'), 'Allowed source.\n');
+    const advisory = preview();
+    assert.equal(advisory.status, 0, advisory.stderr || advisory.error?.message);
+    const dom = parse(readFileSync(priorityHTML, 'utf8'), { scripts: true });
+    selected(dom, 1);
+    assert.match(dom.window.document.getElementById('check-1').textContent, /advisory check does not block/);
+    writeFileSync(join(repo, '.linebind.yml'), `${JSON.stringify(contract, null, 2)}\n# Candidate policy comment\n`);
+  });
+
   await test('a passing preview stays visibly unapproved, including its copied diagnostic', async () => {
     writeFileSync(join(repo, 'src/input.txt'), 'Allowed source.\n');
     writeFileSync(join(repo, 'api/spec.json'), '{"ok":true}\n');
@@ -217,11 +266,13 @@ try {
     assert.match(document.title, /preview.*not approved/i);
     assert.match(document.getElementById('preview-title').textContent, /not approved/i);
     assert.notEqual(dom.window.getComputedStyle(document.getElementById('preview-title')).display, 'none');
+    assert.equal(document.querySelector('.check-filters'), null, 'all-passing results do not need an attention filter');
+    selected(dom, 0);
     document.getElementById('copy-report').click();
     await tick();
     assert.equal(copied.length, 1);
     assert.match(copied[0], /PREVIEW.*NOT APPROVED/);
-    assert.match(copied[0], /not a CI gate/);
+    assert.match(copied[0], /does not approve the policy change/);
     const gate = spawnSync(resolve(binary), ['check', '--repo', repo, '--base', 'HEAD'], { encoding: 'utf8' });
     assert.equal(gate.status, 1, 'preview must not approve the policy change');
   });

@@ -31,24 +31,28 @@ The example assumes the executable is installed at `./bin/linebind`:
 ```sh
 BASE_SHA=$(git rev-parse --verify 'origin/main^{commit}')
 ./bin/linebind validate
-./bin/linebind check --base "$BASE_SHA" --agent --html .linebind/self-check.html
+./bin/linebind preview --base "$BASE_SHA" --agent --html .linebind/self-preview.html
 ```
 
-This uses the base's contract and the current working tree. For a proposed
-contract change, also run the following independently of the old check's exit:
+This validates the current working tree under its proposed contract, matching
+our CI mode. For contract evolution, also keep this old-policy comparison:
 
 ```sh
-./bin/linebind preview --base "$BASE_SHA" --format json \
-  --output .linebind/self-preview.json --html .linebind/self-preview.html
+./bin/linebind check --base "$BASE_SHA" --format json \
+  --output .linebind/self-check.json --html .linebind/self-check.html
 ```
 
 A policy change is expected to leave `check` at exit 1 even when every old rule
-passes. A passing preview demonstrates the proposal; it does not approve it.
-Keep the fixed-base report, proposed policy diff and mutation-test evidence in
-the policy-change review. A maintainer adopts it through the repository's
-separate policy-change process; never change the gate or choose the candidate
-as the base merely to obtain green. After adoption into `main`, a new task can
-resolve that approved revision. See [CI integration](ci.md#bootstrap-and-policy-changes).
+passes. This is old-policy evidence, not this repository's merge gate. Our CI
+uses `preview` to validate the proposed contract, alongside the ordinary tests.
+A contract edit alone can pass. Invalid contracts, incomplete required checks
+and required violations fail.
+
+Keep the fixed-base report and proposed policy diff available for review.
+The maintainer adopts the proposal by merging once all required CI checks pass.
+No external reviewer is mandatory; no actor bypasses those checks. Never change
+the gate, weaken a rule or move the comparison base just to obtain green.
+After adoption into `main`, a new task can resolve that approved revision. See [CI integration](ci.md#bootstrap-and-policy-changes).
 
 The source repository's `AGENTS.md` and `CLAUDE.md` point to the canonical
 bundled skill instead of maintaining two generated copies of that same source.

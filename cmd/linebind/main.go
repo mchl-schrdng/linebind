@@ -53,10 +53,10 @@ Check and preview options:
 Setup installs the bundled skill and repository instructions without network
 access. It preserves existing content and does not create or approve a contract.
 Preview uses the candidate contract; its base is only a comparison reference.
-Preview results describe proposed rules, never approval or a passing CI gate.
+Preview can validate proposed rules in CI; it does not approve their adoption.
 Native checks never execute project code. Missing or incomplete evidence is
-unverified. Exit codes: 0 = gate passed, 1 = required violation or policy
-change, 2 = required verification incomplete or operational error.
+unverified. Exit codes: 0 = required checks passed, 1 = required violation
+(or policy change in check), 2 = required verification incomplete or operational error.
 Advisory findings are reported without blocking the gate.
 `
 

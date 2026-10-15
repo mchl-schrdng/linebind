@@ -9,7 +9,7 @@ The base is supplied by the caller. Linebind resolves it to a local Git commit;
 it does not determine whether that commit was reviewed or authorized. Your
 repository and CI process establish that trust.
 
-## The effective contract
+## The effective contract in `check`
 
 The selected base supplies:
 
@@ -44,15 +44,18 @@ Updating the rules is a normal project decision:
    change and incorporate it into the trusted branch.
 4. Use the approved revision as the base for later code checks.
 
-A policy-only change still returns a review-required result against the old
-base. Linebind has no built-in human approval mechanism, PR-label approval or
-automatic bypass. If Linebind is a required CI gate, the repository needs an
-explicit, separately controlled policy-change approval path. This is part of
-the integration, not a capability supplied by the CLI.
+Our [PR workflow](ci.md) validates the candidate with `preview`. A valid policy
+change does not fail merely because it differs from the base. Required
+violations, incomplete required checks and invalid contracts still fail. The
+maintainer reviews the policy diff and merges only after all required CI checks
+pass; that merge adopts the new contract. No second reviewer or exception path
+is required for this single-maintainer repository.
 
-For the simplest review flow, separate a rule change from code that depends on
-it. Do not select an unreviewed candidate as its own trusted base merely to get
-a passing result.
+`check` remains available for enforcing an already adopted policy: a policy-only
+change returns exit `1` against the old base. Repositories choosing that stricter
+CI mode need their own adoption process. Linebind has no approval-label API or
+automatic bypass in either mode. Do not select the candidate as its own base
+merely to manufacture compliance with the old contract.
 
 The first contract also needs this bootstrap review: `init` writes a starter;
 `validate` checks its schema; neither operation makes it approved. `check`
@@ -69,8 +72,9 @@ Policy differences are displayed but do not alone make preview exit `1`.
 Every preview report carries `purpose: preview`; terminal output, HTML and
 copied diagnostics identify it as not approved. A successful preview establishes
 only the proposed checks' result. The normal `check` against the approved base
-still reports the policy change. Do not use preview as a required CI gate or
-choose an unreviewed candidate as the base to manufacture a passing check.
+still reports the policy change. Preview can be a required candidate-policy
+validation in CI; it cannot prove compliance with the old policy or approve
+the new one. That distinction remains visible in all reports.
 
 Preview commands require `--allow-exec` just like check commands. Unlike check,
 their declared policy files come from the candidate and may be unreviewed.
@@ -127,7 +131,8 @@ unverified. This applies to both arbitrary commands and the structured
 dependency-cruiser/Conftest integrations.
 
 An enabled command runs in a temporary copy of the captured source, with the
-base versions of its declared policy files. No `.git` directory is materialized.
+base versions of its declared policy files in `check`, or candidate versions
+in `preview`. No `.git` directory is materialized.
 Linebind supplies temporary home and temporary-directory locations and a small
 environment including `PATH` and required platform variables. It does not pass
 the calling shell's full environment to the process.
@@ -159,7 +164,7 @@ syntax errors without reporting them, so a passed check means its reported
 graph satisfies the declared rules; it does not establish syntax validity.
 Use a separate required compiler or syntax check for that evidence.
 
-## Limits in 0.1.0
+## Capture and execution limits
 
 | Resource | Limit or behavior |
 | --- | --- |
@@ -224,8 +229,10 @@ to rebuild the verifier or rewrite the policy-enforcement workflow and then
 treat its own result as independent verification.
 
 Choose required and advisory checks deliberately. The report preserves both;
-the exit code enforces required checks plus policy-change review. A CI system
-must actually use that exit code as a gate for it to have any enforcement effect.
+`check` enforces required checks plus policy-change review, while `preview`
+enforces required checks under the proposed policy. CI must actually use the
+selected exit code as a gate. A passing proposal can still remove useful rules:
+the maintainer must assess the policy diff, just as changes to tests or CI itself.
 
 A passing result is about these checks and these inputs. It does not certify
 the repository, authenticate the author of a change or replace code review.

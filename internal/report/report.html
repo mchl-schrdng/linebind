@@ -33,6 +33,7 @@
     .repository svg{flex:none}
     .comparison{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font:11px var(--mono);color:var(--muted);min-width:0}
     .comparison code{padding:4px 7px;border:1px solid var(--line);border-radius:4px;overflow-wrap:anywhere;max-width:100%}
+    .snapshot{margin:12px 0 0 25px;font-size:11px;color:var(--muted)}
     .hero-title{display:flex;align-items:flex-start;gap:15px;margin:0}
     .status-mark{display:block;width:10px;height:10px;border-radius:50%;margin-top:18px;background:var(--muted);flex:none}
     .hero-title.passed .status-mark{background:var(--passed)}
@@ -62,6 +63,10 @@
     .rule-nav{border-right:1px solid var(--line);padding:25px 12px;background:#f1f2ed}
     .nav-heading{display:flex;align-items:center;justify-content:space-between;padding:0 12px;margin-bottom:19px}
     .nav-count{font:11px var(--mono);color:var(--muted)}
+    .check-filters{display:none;flex-wrap:wrap;gap:6px;margin:0 12px 15px}
+    .enhanced .check-filters{display:flex}
+    .check-filters button{padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--muted);font-size:11px}
+    .check-filters button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
     .rule-list{list-style:none;padding:0;margin:0;display:grid;gap:5px}
     .rule-link{position:relative;display:block;text-decoration:none;border:1px solid transparent;border-radius:5px;padding:13px 13px 12px;min-width:0}
     .rule-link:hover{background:#e9ece5}
@@ -87,6 +92,7 @@
     .clause-properties span+span{position:relative;padding-left:15px}
     .clause-properties span+span:before{content:"·";position:absolute;left:0;color:#92978e}
     .clause-properties strong{font-weight:550;color:var(--ink)}
+    .outcome{font-size:12px;line-height:1.7;color:var(--muted);margin:18px 0 0;max-width:68ch}
     .findings{list-style:none;padding:0;margin:0}
     .finding{padding:24px 0;border-bottom:1px solid var(--line)}
     .finding:last-child{border-bottom:0;padding-bottom:6px}
@@ -138,7 +144,7 @@
     <main id="report">
       {{if eq .Purpose "preview"}}<section class="notice" aria-labelledby="preview-title" style="margin-top:24px">
         <h2 class="notice-head" id="preview-title">Preview / not approved</h2>
-        <p>This analysis uses the candidate contract and policy files. It does not approve a contract change or replace the approved-base CI check. Its exit code describes the proposed checks only.</p>
+        <p>This analysis uses the candidate contract and policy files. Its exit code describes the proposed checks, which a repository may validate in CI. A passing result does not approve the policy change or establish compliance with the base contract.</p>
       </section>{{end}}
       <section class="hero" aria-labelledby="report-title">
         <div class="repo-row">
@@ -150,6 +156,7 @@
           <p class="summary">{{if .Checks}}<span><strong>{{len .Checks}}</strong> checks declared</span><span><strong>{{.Crossed}}</strong> crossed</span><span><strong>{{.Unverified}}</strong> not verified</span>{{else}}<span>No check results available</span>{{end}}</p>
           <button class="copy-button" type="button" id="copy-report"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1" stroke="currentColor"/><path d="M10 3V2H2v9h1" stroke="currentColor"/></svg><span>Copy diagnostic</span></button>
         </div>
+        {{if .GeneratedAt}}<p class="snapshot">Captured {{time .GeneratedAt}} · This report is a snapshot; rerun after changes.</p>{{end}}
       </section>
       {{if .Changes}}<section class="notice" aria-labelledby="contract-title">
         <h2 class="notice-head" id="contract-title"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 5h12M4 10h8M4 15h12M15 8v5M12.5 10.5h5" stroke="currentColor" stroke-width="1.3"/></svg>The contract changed</h2>
@@ -160,7 +167,9 @@
       <div class="workspace">
         <nav class="rule-nav" aria-label="Declared checks">
           <div class="nav-heading"><p class="section-label">The boundaries</p><span class="nav-count">{{len .Checks}}</span></div>
-          <ol class="rule-list">{{range $i, $check := .Checks}}<li><a class="rule-link" href="#check-{{$i}}" data-check="check-{{$i}}"><span class="rule-name">{{$check.ID}}</span><span class="rule-meta"><span class="status {{state $check.Status}}">{{status $check.Status}}</span><span>{{if $check.Required}}Required{{else}}Advisory{{end}}</span></span></a></li>{{end}}</ol>
+          {{if .Attention}}<div class="check-filters" role="group" aria-label="Filter checks"><button type="button" data-filter="all" aria-pressed="true">All checks <span>{{len .Checks}}</span></button><button type="button" data-filter="attention" aria-pressed="false">Needs attention <span>{{.Attention}}</span></button></div>{{end}}
+          <span class="sr-only" id="filter-status" role="status" aria-live="polite"></span>
+          <ol class="rule-list">{{range $i, $check := .Checks}}<li><a class="rule-link" href="#check-{{$i}}" data-check="check-{{$i}}" data-state="{{state $check.Status}}" data-required="{{$check.Required}}"><span class="rule-name">{{$check.ID}}</span><span class="rule-meta"><span class="status {{state $check.Status}}">{{status $check.Status}}</span><span>{{if $check.Required}}Required{{else}}Advisory{{end}}</span></span></a></li>{{end}}</ol>
           <p class="nav-foot">Each check keeps its own evidence.<br>Each result is scoped to its declared inputs.</p>
         </nav>
         <div class="details-area">{{range $i, $check := .Checks}}
@@ -169,6 +178,7 @@
             <h2 id="title-{{$i}}">{{$check.ID}}</h2>
             {{if $check.Reason}}<p class="reason">{{$check.Reason}}</p>{{end}}
             <div class="clause-properties"><span><strong>{{if $check.Required}}Required{{else}}Advisory{{end}}</strong></span><span>{{evidence $check.Evidence}}</span><span>{{$check.Files}} files reported</span><span>{{$check.DurationMS}} ms</span></div>
+            <p class="outcome">{{outcome $check}}</p>
             {{range $check.Diagnostics}}<p class="diagnostic">{{.}}</p>{{end}}
             {{if $check.Findings}}<ol class="findings">{{range $check.Findings}}<li class="finding">
               <div class="finding-top"><span class="finding-label">Evidence</span><span class="evolution">{{evolution .Evolution}}</span></div>
@@ -195,21 +205,36 @@
       'use strict';
       const links = Array.from(document.querySelectorAll('[data-check]'));
       const panels = Array.from(document.querySelectorAll('.clause-panel'));
-      function select(id) {
+      const filters = Array.from(document.querySelectorAll('[data-filter]'));
+      function filter(mode) {
+        links.forEach(link => { link.parentElement.hidden = mode === 'attention' && link.dataset.state === 'passed'; });
+        filters.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === mode)));
+        const visible = links.filter(link => !link.parentElement.hidden);
+        document.getElementById('filter-status').textContent = 'Showing ' + visible.length + ' of ' + links.length + ' checks.';
+        if (!visible.some(link => link.getAttribute('aria-current') === 'true') && visible.length) select(visible[0].dataset.check, true);
+      }
+      function select(id, updateHash = false) {
         if (!panels.some(panel => panel.id === id)) return;
+        const target = links.find(link => link.dataset.check === id);
+        if (target?.parentElement.hidden) filter('all');
         panels.forEach(panel => { panel.hidden = panel.id !== id; });
         links.forEach(link => {
           if (link.dataset.check === id) link.setAttribute('aria-current', 'true');
           else link.removeAttribute('aria-current');
         });
+        if (updateHash) {
+          try { history.replaceState(null, '', '#' + id); } catch (_) { /* Selection still works for local files. */ }
+        }
       }
       if (links.length) {
-        const initial = links.find(link => '#' + link.dataset.check === window.location.hash) || links[0];
+        const initial = links.find(link => '#' + link.dataset.check === window.location.hash)
+          || links.find(link => link.dataset.required === 'true' && link.dataset.state !== 'passed')
+          || links.find(link => link.dataset.state !== 'passed') || links[0];
         select(initial.dataset.check);
+        filters.forEach(button => button.addEventListener('click', () => filter(button.dataset.filter)));
         links.forEach(link => link.addEventListener('click', event => {
           event.preventDefault();
-          select(link.dataset.check);
-          try { history.replaceState(null, '', '#' + link.dataset.check); } catch (_) { /* Selection still works for local files. */ }
+          select(link.dataset.check, true);
         }));
         window.addEventListener('hashchange', () => select(window.location.hash.slice(1)));
       }

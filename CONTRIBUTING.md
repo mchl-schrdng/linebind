@@ -12,9 +12,9 @@ You need Git and Go 1.26 or newer. From the repository root:
 go test ./...
 go vet ./...
 gofmt -w cmd internal scripts
-go build -o linebind ./cmd/linebind
-go run ./scripts/smoke -binary ./linebind
-go run ./scripts/pilots -binary ./linebind
+go build -o ./bin/linebind ./cmd/linebind
+go run ./scripts/smoke -binary ./bin/linebind
+go run ./scripts/pilots -binary ./bin/linebind
 ```
 
 The smoke check uses a temporary Git repository outside this checkout, including
@@ -40,13 +40,20 @@ scripts and verifies the conftest release archive against its pinned upstream
 SHA-256 before execution. These integration fixtures belong to Linebind; the
 job does not execute commands from the public p-limit pilot.
 
+## Merging changes
+
+All seven required CI checks must pass before merging into `main`, including
+contract validation. No bypass or second reviewer is configured. Contract edits
+are normal: CI validates the proposed rules with `preview`, and the maintainer
+reviews the diff before merging. See [CI integration](docs/ci.md).
+
 ## Release packaging
 
 Maintainers use Go 1.27.2 for release builds. This command creates six archives
 and `SHA256SUMS` in a new directory; it does not publish anything:
 
 ```sh
-go run ./scripts/package -version v0.2.0 -out dist
+go run ./scripts/package -version v0.3.0 -out dist
 ```
 
 The commit defaults to `git rev-parse HEAD`. Each archive contains the binary,
@@ -59,7 +66,7 @@ OS/architecture combinations are cross-compiled; this does not mean every
 architecture has been executed on native hardware. A separate CI job tests the
 supported Go 1.26 series.
 
-Pushing an exact stable tag such as `v0.2.0` runs the same checks and publishes
+Pushing an exact stable tag such as `v0.3.0` runs the same checks and publishes
 the tested archives as a GitHub release. Only the final publishing job has
 repository write permission. Action versions are pinned to upstream commit SHAs.
 

@@ -46,8 +46,8 @@ establishes trust.
 
 For an initial preview only, an existing commit can serve as the comparison
 base even when it contains no contract. Identify it as a comparison baseline,
-not as an approval. This does not enable a gate until the trusted base contains
-the adopted contract.
+not as an approval. A required `check` needs the adopted contract in its base;
+a repository using `preview` for candidate-policy CI can validate before adoption.
 
 ## Commands
 
@@ -86,11 +86,12 @@ rules during the run.
 **Preview** loads the candidate contract and declared policy files. It uses the
 base only for comparison, including `compare: new`. Its report has
 `purpose: preview`. It is a draft evaluation, even when all checks pass. It does
-not replace `check`, approve the policy, or supply an approved CI gate.
+not establish compliance with the base policy or approve adoption. A repository
+may use it as required CI validation, with maintainer merge adopting the proposal.
 
-For a policy change, retain separate check and preview reports. For the first
-contract, report that the gate is not yet available if the approved base lacks
-a contract; the preview can still evaluate the draft.
+For a policy change, retain separate check and preview reports and follow the
+repository's selected CI mode. For a first contract, `check` is unavailable when
+the base lacks a contract; `preview` can still validate it locally or in CI.
 
 ## Interpret the evidence
 

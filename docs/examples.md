@@ -18,14 +18,16 @@ Each example contains a `base` tree and two overlays, `crossed` and `unverified`
 The latter deliberately contains malformed JSON or YAML. A parser failure must
 be reported as incomplete verification, not as compliance or a proven violation.
 
-From the Linebind checkout, with Git and Go installed:
+For a first run with only Git and the installed binary, use the
+[frontend walkthrough](try-it.md). The runner below is the broader contributor
+validation suite. From the Linebind checkout, with Git and Go installed:
 
 ```sh
-go build -o linebind ./cmd/linebind
-go run ./scripts/pilots -binary ./linebind
+go build -o ./bin/linebind ./cmd/linebind
+go run ./scripts/pilots -binary ./bin/linebind
 ```
 
-On Windows, build `linebind.exe` and pass `-binary ./linebind.exe` instead. To test
+On Windows, build `./bin/linebind.exe` and pass `-binary ./bin/linebind.exe` instead. To test
 a release archive, extract it outside this checkout and pass that binary's path.
 The runner accepts `-examples /path/to/linebind/examples` when run elsewhere.
 
@@ -61,7 +63,7 @@ with its standard-library `sqlite3` module; there are no pip dependencies or
 database server to install.
 
 ```sh
-go run ./scripts/pilots -binary ./linebind -data-command
+go run ./scripts/pilots -binary ./bin/linebind -data-command
 ```
 
 The approved
@@ -109,7 +111,7 @@ Its [package manifest](https://github.com/sindresorhus/p-limit/blob/a8a6fbec4e0e
 declares `"type": "module"`.
 
 ```sh
-go run ./scripts/pilots -binary ./linebind -public
+go run ./scripts/pilots -binary ./bin/linebind -public
 ```
 
 `-public` explicitly enables a Git fetch of that exact commit into a new temporary
