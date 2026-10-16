@@ -78,6 +78,9 @@ unavailable input is reported as incomplete verification.
 
 ## Dependency names
 
+`python` and `cargo` are available in source builds after v0.3.0. The v0.3.0
+release supports `npm` and `go` only; older verifiers reject unsupported formats.
+
 Choose a manifest format and exactly one name policy: `allow` or `deny`.
 Names are exact, not globs. An empty `allow: []` permits no direct dependencies;
 an empty deny list is invalid.
@@ -103,6 +106,58 @@ For `go`, use `scope: [go.mod]` and `format: go`, with no `sections`. Linebind
 checks `require` entries not marked `// indirect`; versioned replacements are
 also checked by name. Local replacements leave package identity unverified.
 
+For `python`, use `scope: [pyproject.toml]` and `format: python`. By default,
+Linebind checks `project.dependencies`, all `project.optional-dependencies`
+groups, and `build-system.requires`; `sections` can select any of these three.
+Names are normalized to lowercase with runs of `.`, `_` and `-` replaced by
+`-`, including names in `allow` and `deny`. All declared extras and environment
+branches are inspected; markers are never evaluated against the host. Version
+specifier syntax is read but ranges are not resolved or validated for
+satisfiability. This is static [PEP 621 metadata](https://packaging.python.org/en/latest/specifications/pyproject-toml/),
+not pip, Poetry or uv resolution. Dependency groups, lockfiles and tool-specific
+development dependencies are outside its scope. Selected dynamic metadata,
+missing project metadata, direct URL references, Poetry dependency declarations
+and uv source overrides leave verification incomplete.
+
+```yaml
+- id: python-packages
+  kind: dependencies
+  reason: Runtime and optional packages need an explicit decision.
+  scope: [pyproject.toml]
+  dependencies:
+    format: python
+    sections: [project.dependencies, project.optional-dependencies]
+    allow: [requests, pydantic]
+```
+
+For `cargo`, use `scope: ['**/Cargo.toml']` and `format: cargo`. The default
+sections are `dependencies`, `dev-dependencies` and `build-dependencies`;
+`sections` can narrow this list. Legacy Cargo `dev_dependencies` and
+`build_dependencies` spellings are inspected with their hyphenated section. The selected sections are also inspected in
+all target tables, regardless of host platform. `dependencies` includes the
+current manifest's `workspace.dependencies` declarations. Renamed dependencies
+are checked using both the local key and the `package` name, as specified by
+[Cargo](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html).
+Optional dependencies are included even when their feature is disabled.
+Inherited `workspace = true` dependencies, path/git/custom-registry sources,
+and patch/replace tables remain unverified: this manifest-local check does not
+resolve workspace roots, local packages or effective source replacement.
+
+```yaml
+- id: rust-packages
+  kind: dependencies
+  reason: Keep application and build dependencies explicit.
+  scope: ['**/Cargo.toml']
+  dependencies:
+    format: cargo
+    allow: [serde, serde_json, cc]
+```
+
+Invalid TOML, duplicate keys and incorrectly typed dependency declarations are
+unverified. The parser bounds array/inline-table nesting at 10,000 levels;
+repository capture also bounds file sizes. These checks are dependency-name
+policies, not complete Python or Cargo manifest validators.
+
 These rules inspect manifest declarations. They do not install dependencies,
 resolve a complete graph, inspect lockfiles, audit vulnerabilities or enforce
 version ranges. A change to a permitted package's version is not itself a
@@ -122,6 +177,8 @@ Choose exactly one condition:
 | `required: true` | The selected value must exist and must not be null. |
 | `equals: VALUE` | The selected value must exist and equal the scalar or null value. |
 | `forbidden-values: [...]` | An existing selected scalar must not equal a listed value. Missing values are not forbidden by this condition. |
+| `allowed-values: [...]` | The selected value must exist and equal one of the listed scalars or null. The list must be nonempty. |
+| `pattern: REGEX` | The selected value must exist, be a string and match the Go/RE2 expression. Use `^` and `$` to require a whole-string match. |
 
 ```yaml
 - id: non-root-containers
@@ -133,8 +190,23 @@ Choose exactly one condition:
     equals: true
 ```
 
+`allowed-values` and `pattern` require a source build after v0.3.0. They are
+positive assertions: missing fields, arrays and objects are violations. Null
+passes only when explicitly listed in `allowed-values`; regexes never coerce
+numbers, booleans, null or YAML timestamps into strings. Empty patterns and
+invalid regexes are rejected when loading the contract. For example:
+
+```yaml
+document:
+  selector: /environment
+  allowed-values: [staging, prod]
+```
+
+A separate rule can use `pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'` to constrain
+a selected version string. Each rule still has exactly one condition.
+
 String and boolean values remain distinct: `"true"` does not satisfy `true`.
-Objects and arrays are not accepted as `equals` or forbidden values. File
+Objects and arrays are not accepted as `equals`, allowed or forbidden values. File
 extensions must be `.json`, `.yaml` or `.yml`. Invalid documents, unsupported
 YAML constructs and duplicate keys produce diagnostics.
 
@@ -262,7 +334,23 @@ linebind preview --base REF [same options as check]
 linebind report INPUT.json [--output .linebind/report.html]
 ```
 
-The default candidate is `worktree`; `--base` is required. `--agent` adds input
+The default candidate is `worktree`; `--base` is required.
+
+Source builds after v0.3.0 also accept `--base merge-base:REF`. This explicitly
+selects the unique best common ancestor of `REF` and the candidate commit
+(`HEAD` for a working-tree candidate). An explicit `--head` is respected even
+when it differs from the checkout. The report records the resolved full SHA.
+For example, `linebind preview --base merge-base:main` compares local changes
+with their branch point. This [Git ancestry calculation](https://git-scm.com/docs/git-merge-base)
+does not establish policy approval: `check` reads the ancestor's contract,
+which may be older than the current target branch's policy. Use it only when
+your repository explicitly chooses that ancestor as its policy source.
+
+Missing references, unrelated histories, multiple best ancestors and shallow
+repositories return exit 2; there is no fetch or fallback. CI should keep using
+explicit event SHAs. Agents should resolve the agreed base once and reuse its
+full SHA throughout a task, rather than recomputing a moving merge base.
+ `--agent` adds input
 and contract identifiers to text diagnostics and cannot be combined with
 `--format json`. `--output` writes the selected
 text or JSON format; `--html` writes a self-contained HTML report. `report`

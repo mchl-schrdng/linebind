@@ -44,6 +44,14 @@ that an arbitrary local `main`, current `HEAD`, or a candidate's instructions
 establish a new approved base. The CLI records identity; the repository process
 establishes trust.
 
+Source builds after v0.3.0 accept `--base merge-base:REF`, resolving the unique
+common ancestor with the selected candidate (`HEAD` for a working tree).
+An ancestor is not automatically an approved policy source and can predate
+current target-branch policy. Use this only when the repository workflow
+explicitly designates that ancestor. Hold the resulting SHA fixed for the task;
+do not recompute it to obtain a pass. Shallow or ambiguous history is rejected.
+Keep explicit event SHAs in CI.
+
 For an initial preview only, an existing commit can serve as the comparison
 base even when it contains no contract. Identify it as a comparison baseline,
 not as an approval. A required `check` needs the adopted contract in its base;

@@ -20,10 +20,15 @@ func evaluateDependencies(r Rule, selected []string, files map[string][]byte, ch
 		var deps []string
 		var diagnostics []string
 		var err error
-		if r.Dependencies.Format == "npm" {
+		switch r.Dependencies.Format {
+		case "npm":
 			deps, diagnostics, err = npmDependencies(files[name], r.Dependencies.Sections)
-		} else {
+		case "go":
 			deps, diagnostics, err = goDependencies(name, files[name])
+		case "python":
+			deps, diagnostics, err = pythonDependencies(files[name], r.Dependencies.Sections)
+		case "cargo":
+			deps, diagnostics, err = cargoDependencies(files[name], r.Dependencies.Sections)
 		}
 		if err != nil {
 			check.Diagnostics = append(check.Diagnostics, name+": "+err.Error())

@@ -1,0 +1,26 @@
+name: Set up Linebind
+description: Install a checksum-pinned published Linebind verifier on Linux x64.
+branding:
+  icon: check-circle
+  color: gray-dark
+inputs:
+  version:
+    description: Exact published version; update sha256 together with this value.
+    default: v0.3.0
+  sha256:
+    description: Independently reviewed SHA-256 of the Linux amd64 release archive.
+    default: 609fc209c10803d5613f2afc4c1f903145143a4f388276f3727dbc0261401b07
+outputs:
+  binary:
+    description: Absolute path to the verified executable, also added to PATH.
+    value: ${{ steps.install.outputs.binary }}
+runs:
+  using: composite
+  steps:
+    - id: install
+      shell: bash
+      env:
+        LINEBIND_ACTION_PATH: ${{ github.action_path }}
+        LINEBIND_VERSION: ${{ inputs.version }}
+        LINEBIND_SHA256: ${{ inputs.sha256 }}
+      run: bash "$LINEBIND_ACTION_PATH/scripts/action/install.sh"

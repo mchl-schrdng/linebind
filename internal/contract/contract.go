@@ -56,8 +56,11 @@ type DocumentRule struct {
 	Selector        string `yaml:"selector" json:"selector"`
 	Equals          any    `yaml:"equals,omitempty" json:"equals,omitempty"`
 	ForbiddenValues []any  `yaml:"forbidden-values,omitempty" json:"forbidden-values,omitempty"`
+	AllowedValues   []any  `yaml:"allowed-values,omitempty" json:"allowed-values,omitempty"`
+	Pattern         string `yaml:"pattern,omitempty" json:"pattern,omitempty"`
 	Required        bool   `yaml:"required,omitempty" json:"required,omitempty"`
 	equalsSet       bool
+	pattern         *regexp.Regexp
 }
 
 type CommandRule struct {
@@ -113,6 +116,14 @@ func Load(data []byte) (*Contract, error) {
 		if r.Document != nil {
 			docNode := field(n, "document")
 			r.Document.equalsSet = field(docNode, "equals") != nil
+			if pattern := field(docNode, "pattern"); pattern != nil {
+				if pattern.Tag != "!!str" || pattern.Value == "" {
+					return nil, fmt.Errorf("rule %q: document.pattern must be a nonempty string", r.ID)
+				}
+			}
+			if allowed := field(docNode, "allowed-values"); allowed != nil && allowed.Kind != yaml.SequenceNode {
+				return nil, fmt.Errorf("rule %q: allowed-values must be a nonempty list", r.ID)
+			}
 			if required := field(docNode, "required"); required != nil {
 				if err := strictBool(required); err != nil {
 					return nil, fmt.Errorf("rule %q document.required: %w", r.ID, err)
@@ -187,8 +198,8 @@ func validateRule(r *Rule) error {
 			return fmt.Errorf("dependencies configuration is required")
 		}
 		x := r.Dependencies
-		if x.Format != "npm" && x.Format != "go" {
-			return fmt.Errorf("dependencies.format must be npm or go")
+		if !slices.Contains([]string{"npm", "go", "python", "cargo"}, x.Format) {
+			return fmt.Errorf("dependencies.format must be npm, go, python or cargo")
 		}
 		if (x.Allow == nil) == (x.Deny == nil) {
 			return fmt.Errorf("specify exactly one of dependencies.allow or dependencies.deny")
@@ -202,15 +213,32 @@ func validateRule(r *Rule) error {
 			}
 		}
 		if x.Format == "go" && len(x.Sections) != 0 {
-			return fmt.Errorf("sections are only supported for npm")
+			return fmt.Errorf("sections are unsupported for go")
 		}
-		if x.Format == "npm" {
-			if len(x.Sections) == 0 {
-				x.Sections = []string{"dependencies", "devDependencies", "optionalDependencies", "peerDependencies"}
+		var supported []string
+		switch x.Format {
+		case "npm":
+			supported = []string{"dependencies", "devDependencies", "optionalDependencies", "peerDependencies"}
+		case "python":
+			supported = []string{"project.dependencies", "project.optional-dependencies", "build-system.requires"}
+			for _, names := range [][]string{x.Allow, x.Deny} {
+				for i, name := range names {
+					if !pythonPackageName.MatchString(name) {
+						return fmt.Errorf("invalid Python package name %q", name)
+					}
+					names[i] = normalizePythonName(name)
+				}
 			}
-			for _, s := range x.Sections {
-				if !slices.Contains([]string{"dependencies", "devDependencies", "optionalDependencies", "peerDependencies"}, s) {
-					return fmt.Errorf("unsupported npm section %q", s)
+		case "cargo":
+			supported = []string{"dependencies", "dev-dependencies", "build-dependencies"}
+		}
+		if supported != nil {
+			if len(x.Sections) == 0 {
+				x.Sections = supported
+			}
+			for _, section := range x.Sections {
+				if !slices.Contains(supported, section) {
+					return fmt.Errorf("unsupported %s section %q", x.Format, section)
 				}
 			}
 		}
@@ -240,11 +268,30 @@ func validateRule(r *Rule) error {
 				}
 			}
 		}
+		if x.AllowedValues != nil {
+			ops++
+			if len(x.AllowedValues) == 0 {
+				return fmt.Errorf("allowed-values must not be empty")
+			}
+			for _, v := range x.AllowedValues {
+				if !isScalar(v) {
+					return fmt.Errorf("allowed-values must contain scalars or null")
+				}
+			}
+		}
+		if x.Pattern != "" {
+			ops++
+			var err error
+			x.pattern, err = regexp.Compile(x.Pattern)
+			if err != nil {
+				return fmt.Errorf("invalid document RE2 pattern: %w", err)
+			}
+		}
 		if x.Required {
 			ops++
 		}
 		if ops != 1 {
-			return fmt.Errorf("document requires exactly one of equals, forbidden-values, or required: true")
+			return fmt.Errorf("document requires exactly one of equals, forbidden-values, allowed-values, pattern, or required: true")
 		}
 	case "command":
 		if r.Command == nil {

@@ -175,3 +175,59 @@ Other boundaries are deliberate: lexical rules do not resolve imports,
 document rules do not validate running services, and host commands are not
 sandboxed. Findings are as useful as the declared contract and the evidence its
 checks can obtain. See the [trust model](trust-model.md) for the complete limits.
+
+## Follow-up to the adoption review
+
+The October 16 review identified four concrete friction points. Source builds
+now include Python/Cargo dependency declarations, positive document predicates,
+an explicit merge-base shorthand, and a Linux x64 setup Action. These additions
+are not in the published v0.3.0 CLI. The setup Action installs that existing
+release with a pinned checksum; it does not build the candidate being checked.
+
+The implementation keeps the trust distinction from that review: native checks
+inspect captured bytes, `check` uses base policy, and `preview` uses proposed
+policy. Native evaluation is deterministic for identical captured inputs and
+rules; timestamps, Git identity and external command environments are separate
+reporting/execution concerns. An ancestry calculation never establishes approval.
+
+Verification against the fixed base
+`184bac4183753ca24a014df8f9ac6d8d67b37eda` included:
+
+- `go test ./...`, `go test -race ./...` and `go vet ./...`.
+- Positive/negative document tests for JSON and YAML, scalar types, null,
+  missing values, wildcards, multiple documents, regex validation and stable
+  finding identities.
+- Python normalization, extras, conditional declarations, optional/build
+  dependencies, direct references, dynamic metadata, malformed/duplicate TOML,
+  Poetry/uv ambiguity, and typed manifest errors.
+- Cargo aliases, optional/dev/build/target dependencies, legacy section names,
+  workspace declarations and inheritance, source overrides and malformed input.
+- A bounded 15-second fuzz run over both TOML readers: 427,319 executions, no
+  crash observed. This is additional probing, not proof of parser correctness.
+- Git fixtures for diverged branches, an explicit candidate different from the
+  checkout, detached HEAD, missing refs, unrelated/shallow/criss-cross histories,
+  and preservation of base policy. The CLI integration tests exercise report
+  SHAs, existing debt, violations and incomplete evidence.
+- Installer tests verify the download URL, checksum-before-execution behavior,
+  input validation and unsupported runners. CI additionally exercises the real
+  published archive and checks both a passing and a violating fixture.
+- `actionlint` on the workflows and the installed-binary smoke suite.
+
+The trusted v0.3.0 executable validates the proposed self-contract: all five
+rules pass in `preview`. Its separate old-base `check` returns 1 because the
+new TOML module is outside the previous allowlist and the policy file changed.
+The four other rules pass. This is explicit policy evolution, with no rule
+removed or made advisory; merging after CI adopts the additional direct module.
+
+With Go 1.27.2, identical `-trimpath -buildvcs=false -ldflags='-s -w'` settings
+and native darwin/arm64 builds, the baseline binary is 5,393,058 bytes and the
+feature build is 5,677,346 bytes (+284,288 bytes, about 5.3%). This measures the
+whole feature change, not the parser alone. The TOML parser adds one direct
+module and no transitive runtime module; its MIT notice is included in releases.
+
+The first implementation deliberately leaves dynamic Python resolution,
+Cargo workspace/source resolution, full manifest-schema validation, a separate
+Action repository, Homebrew distribution and additional Action runner platforms
+out of scope. Unknown identities remain unverified instead of passing. The
+Action source and CLI release are independently pinned. No new release or
+floating Action tag is published by these source changes.

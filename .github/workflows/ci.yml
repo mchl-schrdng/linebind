@@ -149,3 +149,35 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/linebind-tools/node_modules
         run: node scripts/ui-test.mjs "$RUNNER_TEMP/linebind-data-installed/linebind"
+
+  setup-action:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the published CLI with the candidate Action
+        id: linebind
+        uses: ./
+      - name: Exercise the installed release on an isolated fixture
+        env:
+          LINEBIND_BINARY: ${{ steps.linebind.outputs.binary }}
+        run: |
+          fixture=$(mktemp -d "$RUNNER_TEMP/linebind-action-fixture.XXXXXXXX")
+          cd "$fixture"
+          git init -q
+          git config user.email fixture@example.invalid
+          git config user.name Fixture
+          printf 'version: 1\nname: Action fixture\nrules:\n  - id: readme\n    kind: require-files\n    reason: Keep the entry point.\n    files:\n      require: [README.md]\n' > .linebind.yml
+          touch README.md
+          git add .
+          git commit -qm base
+          base=$(git rev-parse HEAD)
+          "$LINEBIND_BINARY" check --base "$base"
+          rm README.md
+          set +e
+          linebind check --base "$base"
+          result=$?
+          set -e
+          test "$result" -eq 1
