@@ -1,11 +1,11 @@
 version: 1
-name: Kubernetes workload policy
+name: Kubernetes Pod privileged-mode policy
 rules:
   - id: no-privileged-containers
     kind: command
-    reason: Workloads must not enable privileged containers.
-    scope: ["infra/**/*.yaml"]
-    remediation: Remove privileged mode or set securityContext.privileged to false.
+    reason: Each scoped document must be a Pod whose regular, init and ephemeral containers do not enable privileged mode.
+    scope: ["infra/**/*.yaml", "infra/**/*.yml"]
+    remediation: Supply a supported Pod, then omit privileged or set it to boolean false in every container group.
     command:
       argv: [conftest, test, infra, --policy, policy, --output, json]
       format: conftest

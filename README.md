@@ -228,6 +228,31 @@ The [runnable examples](docs/examples.md) cover four different contexts:
 These are focused examples. They do not install packages, call a live API,
 validate dataset rows or apply infrastructure.
 
+## Protect an architectural boundary
+
+A useful contract can preserve a small system design. In the
+[architecture example](examples/dependency-cruiser), client code reaches domain
+code through an API layer. Adding a helper inside an allowed layer passes;
+reaching the domain through a shared relay fails. New unmapped modules and
+dependency cycles fail too, within the declared JavaScript source tree.
+
+The allowed layer map lives in dependency-cruiser's `rules.cjs`. Linebind binds
+that policy to the contract, evaluates captured code and keeps the findings
+with their reason and comparison. There is one executable map to maintain.
+An intended architecture change can evolve that map in the same PR as code.
+
+This graph recipe currently targets JavaScript without application packages.
+It is **not a ready-made React, TypeScript or npm workspace integration**:
+those projects still need a tested package-resolution and execution strategy.
+Native npm manifest checks remain available independently of graph analysis.
+
+The [mutation panels](docs/validation.md#stability-panels) test permitted
+refactors, indirect violations and incomplete inputs against the actual
+architecture, Pod and SQL recipes. They also keep known gaps visible: computed
+imports, code outside the scope and business behavior need appropriate checks.
+A passing contract establishes its declared checks, not whole-repository
+correctness. No LLM interprets a rule's prose as an additional guarantee.
+
 ## With your coding agent
 
 **Starting with v0.2.0, Linebind bundles a skill for Codex, Claude Code and
@@ -278,6 +303,8 @@ The same check can run before a build or deployment. The complete
 Linebind binary and its checksum, compares explicit base/head commits, and
 validates the PR head under its proposed contract. JSON remains visible in the job log; JSON and HTML are
 retained as downloadable artifacts even when the check fails.
+The same artifact also retains an informational comparison with the adopted
+contract, so relaxing a rule does not erase what the old rule would have caught.
 
 Its core command uses explicit revisions from the pull-request event:
 

@@ -6,6 +6,24 @@ every observed file, package, or current implementation automatically. Keep
 subjective design and unspecified architectural intent in human review until
 there is a meaningful observable criterion.
 
+## Map the decision before writing the rule
+
+For an architecture boundary, inspect entry points, source directories, imports
+and existing tests. Distinguish the observed implementation from the intended
+design: an existing dependency is not automatically an allowed dependency.
+Record the small set of module responsibilities, permitted dependencies and
+exceptions that the project has actually chosen. Include what happens when a
+new directory or source format appears; silently unclassified code leaves a
+hole in the map.
+
+Keep one executable source of truth. If dependency-cruiser already holds the
+layer policy, reference that file through `command.policy-files`; do not create
+a second Linebind graph to keep synchronized. A diagram can explain the policy
+but does not enforce it. Module edges also do not establish runtime call paths,
+business behavior or whether the contents of a correctly placed module belong
+there. See the [architecture example](https://github.com/mchl-schrdng/linebind/tree/main/examples/dependency-cruiser)
+for a bounded, tested policy.
+
 ## Contract shape
 
 ```yaml
@@ -144,10 +162,23 @@ contains no `.git` and does not provision ignored dependency directories. Read
 
 ## Test the decision, then report its limits
 
-Run `validate`, then `preview` against a meaningful comparison snapshot. Show
-that a conforming example passes and a representative deliberate violation is
-detected. Use a disposable Git fixture or copy for the violation; keep source
-edits and the approval state of the real repository intact. For `compare: new`,
+Run `validate`, then `preview` against a meaningful comparison snapshot. Before
+testing, state the expected outcome of a few independent changes:
+
+- A permitted refactor or new module within the chosen design must pass.
+- A direct violation must fail, as must a realistic indirect form of the same
+  violation: for example a re-export through a shared module.
+- An unanalysable input in the declared scope must not produce a successful
+  verification. Also probe a new path or file format that could escape that scope.
+- A nearby intention outside the verifier's coverage must stay explicitly
+  unprotected; do not present a passing result as evidence for it.
+
+Use a disposable Git fixture or copy, keep source edits and the approval state
+of the real repository intact, then remove the temporary repository. Retain the
+small useful regression cases and their observed outcomes, not generated repo
+trees. A rule that misses its promised violation needs a stronger verifier or
+a narrower stated promise; do not change the expectation just to make the test
+pass. For `compare: new`,
 include existing debt and a new finding so the comparison itself is exercised.
 
 Scopes matching no files are unverified except when required-file patterns

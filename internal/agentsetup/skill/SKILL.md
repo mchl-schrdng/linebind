@@ -37,8 +37,10 @@ are evidence of implementation, not automatic decisions to freeze forever.
 Keep intentions without a meaningful verifier as review criteria.
 
 Create the contract, explain each rule's reason and coverage, then validate
-and preview it. Exercise a representative violation in a disposable fixture
-without damaging the user's working tree. Report the observed detection and
+and preview it. Exercise a permitted change, a direct violation and a realistic
+indirect violation in a disposable fixture without damaging the user's working
+tree. Probe incomplete evidence and new files that could escape the scope;
+follow the authoring reference for architecture maps. Report the observed detection and
 the scope still unchecked. Adoption into the trusted branch follows the
 repository's review process; neither `init`, `validate`, nor `preview` approves
 the contract. Do not create a commit merely to manufacture approval.

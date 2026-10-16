@@ -70,7 +70,10 @@ The approved
 [checker](../examples/data-command/base/checks/check_orders.py) loads three rows
 from a fixed [CSV fixture](../examples/data-command/base/checks/orders.csv) into
 an in-memory SQLite database. It evaluates the candidate `transform.sql` and
-requires a nonempty result with unique, non-null `order_id` values. The checker
+requires a nonempty result with unique, non-null `order_id` values and preserves
+every input order's `order_id` and `customer_id`. Row order may change. This
+fixture deliberately chooses preservation; filtering or aggregation would need
+a different agreed invariant. The checker
 and CSV are both `policy-files`: Linebind uses their approved base versions when
 running a candidate. Changes to them require separate policy review.
 
@@ -84,7 +87,7 @@ The optional runner adds six cases:
 
 | Candidate | Result | Meaning |
 | --- | --- | --- |
-| Original transformation | `passed`, exit `0` | All three output keys are unique and non-null |
+| Original transformation | `passed`, exit `0` | All three orders and their customer assignments are preserved |
 | Replace every key with `101` | `crossed`, exit `1` | Duplicate keys in actual returned rows |
 | Replace keys with `NULL` | `crossed`, exit `1` | Null keys in actual returned rows |
 | Malformed SQL | `unverified`, exit `2` | The checker cannot evaluate the transformation |
@@ -96,7 +99,11 @@ this trusted checker. Its Python version is recorded in the evidence index.
 Generic `format: exit` reports contain the declared command verdict and diagnostic
 output; they do not invent structured findings or source locations. Passing
 these three fixture rows does not establish correctness on production data, full
-SQL compatibility, completeness of the transformation or general data quality.
+SQL compatibility or general data quality. A query hardcoding those three rows
+or dropping only future IDs can pass; the contract does not prove behavior on
+inputs it never executes. The [policy panel](../internal/app/policy_panel_test.go)
+also exercises dropped rows, invented keys, changed customers, reordering and
+unsupported query shapes against the actual checker.
 
 The Linux external-tools CI job runs these cases with Python supplied by the
 runner. The native checks remain usable without Python. Combine `-data-command`

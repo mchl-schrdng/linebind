@@ -1,5 +1,82 @@
 # Validation
 
+## Stability panels
+
+On 2026-10-16, three independent investigation threads and a local native-check
+panel challenged the usefulness of the contracts, not just parser correctness.
+Expected outcomes were written before evaluation. Temporary Git repositories
+contained plausible source modules, API declarations, Pod manifests and SQL
+transformations. None was an independent user deployment. Generated repository
+trees were removed; the small repeatable cases live beside the existing tests.
+
+The initial panels comprised 21 native scenarios, 24 architecture scenarios
+under both the old and proposed policies, and 28 Pod/SQL scenarios before and
+after strengthening their recipes. A separate reviewer supplied 24 additional
+cases after those recipes were prepared. These selected cases do **not** establish
+population precision, recall, production adoption or the absence of other gaps.
+
+| Decision tested | Finding and resulting change |
+| --- | --- |
+| Declared dependency names and API/configuration values | The native panel preserved 6 permitted cases, blocked 8 declared violations and returned incomplete verification for 3 invalid inputs. Four nearby intentions still passed because the rule did not establish them: a dev dependency imported by runtime code, a major-version change, an invalid-but-present OpenAPI response node, and broken server behavior. |
+| JavaScript layer boundaries | A direct client-to-domain prohibition missed shared relays and did not encode other layer decisions. The example now declares allowed layer edges, rejects unmapped modules within `src/**` and forbids cycles. Permitted module splits, API barrels, shared helpers and comments remain accepted. This deliberately strengthens the policy; the old rule's narrower coverage was not an engine bug. |
+| Cycle evidence | A real adapter defect treated dependency-cruiser's single cycle summary as missing evidence for its other edges. Linebind now validates the closed path against captured graph edges and scope, and preserves unrelated failures. Cycle paths have distinct finding identities. An independent reviewer verified self-loops, a four-node ring, overlapping cycles, a dense graph and a cycle plus a separate violation. |
+| Pod privilege | The original recipe missed init/ephemeral containers and a missing container name could suppress the violation message. The policy now covers all three groups, checks the shapes needed for this assertion, and explicitly rejects unsupported kinds. It accepts omitted `privileged`, which defaults to false. |
+| Order preservation | Unique non-null keys did not prevent dropped rows, invented keys or reassigned customers. The SQL recipe now deliberately requires preservation of every input order/customer pair on its approved dataset, while permitting row reordering. |
+| Policy evolution | The workflow retains an informational old-policy report alongside required `preview`. Its actual shell blocks were executed with published v0.3.0 in five disposable Git scenarios: unchanged, violated, intentionally evolved, first adoption and malformed contract. An unexpected process exit was also tested and remains a step failure. An intended evolution passed preview while retaining the old violation. |
+
+The architecture, Pod and data panels read the actual committed examples in
+`internal/app/architecture_panel_test.go` and `internal/app/policy_panel_test.go`.
+The existing external-tools CI selection runs them with pinned dependency-cruiser
+17.3.8, Conftest 0.62.0 and Python/SQLite. Native cycle regressions also reject
+open, fabricated, out-of-scope and incomplete cycle evidence. These cases remain
+small source mutations instead of copied application repositories.
+
+A 505-module allowed JavaScript tree exposed a practical timeout risk: starting
+Node sequentially per file took 29.777 seconds of the syntax rule's 30-second
+budget. A bounded pool of four workers reduced that stage to 8.228 seconds and
+the complete check from 30.363 to 8.754 seconds on this macOS ARM64 host. Both
+runs passed with the same files and timeout. This is a single-host scale probe,
+not a cross-platform performance guarantee; actual projects should select their
+compiler and calibrate the execution budget.
+
+Local validation passed all 289 tests/subtests in the complete Go suite with
+race detection and no skipped tests. These
+include 58 recipe cases: 28 architecture, 18 Pod and 12 SQL. One architecture
+case deliberately records the computed-import miss; a passing test for that
+known limit is not a successful detection. Vet, formatting, module tidy diff,
+skill validation, installed-binary smoke checks and all 22 native/SQLite CLI
+pilots passed. Both the adopted and proposed self-contract checks passed
+against fixed base `184bac4183753ca24a014df8f9ac6d8d67b37eda` with published
+v0.3.0. This work adds no runtime dependency, LLM call, new rule kind or second
+architecture-map format.
+
+The independent holdout found seven limits that remain intentionally visible:
+computed or concatenated dynamic imports can disappear from the static graph;
+a new source root outside `src/` is outside the recipe; changing authorization
+logic without changing imports passes; `hostPID` is outside the no-privilege
+Pod rule; hardcoding the three SQL rows or dropping only future unseen IDs can
+pass. Unsupported source formats within `src/` now yield `unverified`, not a
+claimed syntax or architecture violation.
+
+Three further adoption probes used a React import declared in `package.json`,
+TSX with a `tsconfig` path alias, and a local npm workspace import. All returned
+`unverified`. The disposable snapshot does not provision application packages;
+ignored `node_modules` are absent, and the structured adapter rejects unresolved
+or skipped graph nodes. Installing the graph tool alone does not close this
+gap. The architecture recipe therefore is not a validated drop-in integration
+for ordinary React/TypeScript/workspace applications. A supported resolution and
+execution strategy is a prerequisite for that claim, not a successful result
+established by the dependency-free panel.
+
+The product supports continuity of **explicit, executable decisions**. A map
+must describe intended boundaries, not automatically approve whatever graph
+the code currently has. Keep the specialist policy as its single executable
+source of truth, and pair structural rules with tests for the behavior that
+matters. An agent can propose a policy evolution; `preview` cannot decide
+whether weakening that policy is legitimate. The maintainer still adopts it
+at merge. External maintainers and sustained use are needed to establish
+whether this workflow prevents enough useful errors to justify its upkeep.
+
 ## Repository review after v0.3.0
 
 On 2026-10-15, a review of the CLI, native evaluators, Git capture, command

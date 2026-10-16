@@ -34,13 +34,21 @@ set -o pipefail
 JSON is visible in the job log and saved beside the standalone HTML report.
 `pipefail` preserves a failing exit through `tee`; there is no success fallback.
 
+Before that required gate, the workflow also runs `check` on the same base/head
+pair. It saves `adopted.json`, `adopted.html` and `adopted-exit-code.txt` so a
+maintainer can see what the code would violate under the previously adopted
+rules, including rules relaxed or removed by the proposal. Exits 0, 1 and 2
+are retained as informational evidence; an unexpected process failure fails
+the step. An initial adoption can have exit 2 here because no base contract
+exists. This does not prevent a valid proposed contract from passing `preview`.
+
 | Exit | Effect on this job |
 | --- | --- |
 | `0` | Required proposed checks passed; policy edits and advisory findings remain visible |
 | `1` | Failed: a required proposed rule was crossed |
 | `2` | Failed: required verification was incomplete, the contract was invalid/missing, or an operation failed |
 
-An artifact named `linebind-pr-<number>-<head-sha>` keeps both reports for seven
+An artifact named `linebind-pr-<number>-<head-sha>` keeps these reports for seven
 days, including failures, via `always()`. Fetch/download failures can occur
 before a report exists; runner cancellation or an upload outage can prevent
 retention. Uploading evidence does not turn a failed job into a pass.
@@ -87,9 +95,9 @@ once required CI passes. Later code and contract changes use the same flow.
 For example, deliberately adding Zod to both a dependency rule and the manifest
 can pass, while adding an undeclared dependency still fails.
 
-`check` remains useful as separate evidence: it evaluates the base contract and
+`check` is retained as separate evidence: it evaluates the base contract and
 returns exit `1` on policy edits. It does not supply this repository's merge
-decision. The [agent skill](agents.md) retains that evidence alongside `preview`
+decision. The workflow and [agent skill](agents.md) retain that evidence alongside `preview`
 when evolving a decision, without changing the comparison base to get green.
 
 Teams that intentionally want to freeze the adopted policy can instead require

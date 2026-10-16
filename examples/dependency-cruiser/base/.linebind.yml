@@ -4,7 +4,7 @@ rules:
   - id: javascript-syntax
     kind: command
     reason: Validate syntax before trusting a graph built with parser recovery.
-    scope: ["src/**/*.mjs"]
+    scope: ["src/**"]
     remediation: Fix the JavaScript syntax error reported by Node.
     command:
       argv: [node, scripts/check-syntax.mjs]
@@ -12,9 +12,9 @@ rules:
       policy-files: [scripts/check-syntax.mjs]
   - id: client-boundary
     kind: command
-    reason: Client code accesses domain data through the API module.
-    scope: ["src/**/*.mjs"]
-    remediation: Import the API module instead of reaching directly into domain.
+    reason: Keep the declared client, API, domain, adapter and shared layers acyclic and within their allowed dependencies.
+    scope: ["src/**"]
+    remediation: Follow the layer map in rules.cjs or propose an explicit architecture change.
     command:
       argv: [depcruise, --config, rules.cjs, --output-type, json, src]
       format: dependency-cruiser
