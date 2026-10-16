@@ -24,7 +24,7 @@ replace the download/checksum/extract step with:
 
 ```yaml
 - name: Install the published verifier
-  uses: mchl-schrdng/linebind@ACTION_COMMIT # replace with a reviewed full commit SHA
+  uses: mchl-schrdng/linebind@b1f1860e8d060c8c4f90c0f67bff367b5bf1e618 # setup Action
 ```
 
 The Action installs v0.3.0 by default, verifies the archive against its pinned
@@ -36,8 +36,8 @@ and required-check settings from the full workflow above. For another published
 release, supply both `version: vX.Y.Z` and its independently reviewed `sha256`.
 A wrong checksum fails closed; there is no automatic `latest` update.
 
-`ACTION_COMMIT` is a placeholder for a commit containing `action.yml`; neither
-v0.3.0 nor an `@v1` Action tag contains this new integration. Pin the Action
+The example pins the commit introducing `action.yml`; neither v0.3.0 nor an
+`@v1` Action tag contains this new integration. Pin the Action
 source independently of the CLI release it installs. Python/Cargo formats and
 the new document predicates also require a newer CLI build; the setup Action's
 default v0.3.0 verifier will reject those unsupported rules.
@@ -45,7 +45,7 @@ default v0.3.0 verifier will reject those unsupported rules.
 For example, after the existing base checkout and candidate-fetch steps:
 
 ```yaml
-- uses: mchl-schrdng/linebind@ACTION_COMMIT # reviewed full SHA
+- uses: mchl-schrdng/linebind@b1f1860e8d060c8c4f90c0f67bff367b5bf1e618 # setup Action
 - name: Validate the proposal
   env:
     BASE_SHA: ${{ github.event.pull_request.base.sha }}
