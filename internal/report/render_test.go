@@ -62,6 +62,8 @@ func TestHTMLNeverInterpretsRepositoryMarkup(t *testing.T) {
 	result.InputDigest = payload
 	result.Diagnostics = []string{payload}
 	result.Changes = []model.ContractChange{{Path: payload, Change: payload, Detail: payload}}
+	result.RuleChanges = []model.RuleChange{{ID: payload, Change: "modified", Before: payload, After: payload, PolicyFiles: []string{payload}}}
+	result.Checks[0].Specification = payload
 	result.Checks[0].ID = payload
 	result.Checks[0].Reason = payload
 	result.Checks[0].Kind = payload

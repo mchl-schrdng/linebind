@@ -31,7 +31,7 @@ func Preview(opt Options) model.Report {
 }
 
 func evaluate(opt Options, purpose string) model.Report {
-	r := model.Report{SchemaVersion: 1, Purpose: purpose, Version: opt.Version, Repository: filepath.Base(opt.Repo), Base: opt.Base, Candidate: opt.Head,
+	r := model.Report{SchemaVersion: 2, Purpose: purpose, Version: opt.Version, Repository: filepath.Base(opt.Repo), Base: opt.Base, Candidate: opt.Head,
 		ContractPath: opt.Contract, GeneratedAt: time.Now().UTC().Format(time.RFC3339), Status: "unverified", ExitCode: 2,
 		Changes: []model.ContractChange{}, Checks: []model.Check{}, Diagnostics: []string{}}
 	if purpose == "preview" {
@@ -97,6 +97,7 @@ func evaluate(opt Options, purpose string) model.Report {
 	if err != nil {
 		return fail(fmt.Errorf("%s contract invalid: %w", policyLabel, err))
 	}
+	r.RuleChanges, r.RuleChangeNote = describeRuleChanges(base, candidate, opt.Contract)
 	policy := map[string]bool{opt.Contract: true}
 	for _, rule := range c.Rules {
 		if rule.Command != nil {
@@ -164,6 +165,7 @@ func evaluate(opt Options, purpose string) model.Report {
 				previous[i] = runCommand(rule, base, policySource, opt.AllowExec)
 			}
 		}
+		r.Checks[i].Specification = rule.Specification
 		markOmissions(rule, candidate, &r.Checks[i])
 		markOmissions(rule, base, &previous[i])
 		if rule.Compare == "new" {

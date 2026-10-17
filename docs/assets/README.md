@@ -4,6 +4,14 @@ The Linebind symbol and wordmark are original vector artwork, supplied in light
 and dark variants under this repository's MIT license. The brackets represent
 an explicit boundary; the line ties the two sides together.
 
+`contract-line.svg` is a static illustration, not a report capture or a live
+status badge. Its five positions refer to the repository's own contract rules,
+in declaration order; labels are shortened for the composition. The middle row
+illustrates a hypothetical `exec.Command` occurrence in the native contract
+package, which its declared lexical rule forbids. The final row illustrates its
+removal. No execution or measured finding is asserted by this artwork. The SVG
+includes light/dark palettes and contains no scripts or external resources.
+
 `report-desktop.svg` is an editorial illustration of the report on a
 macOS-style desktop, not a browser or operating-system screenshot. The window
 layout is adapted from the actual report template. Its finding, rule, reason,

@@ -60,6 +60,30 @@ func TestCLIInitCheckAndOfflineReport(t *testing.T) {
 	if r.Status != "passed" || r.InputDigest == "" || r.Base == "HEAD" {
 		t.Fatalf("missing provenance: %+v", r)
 	}
+	if r.SchemaVersion != 2 || r.Checks[0].Specification == "" {
+		t.Fatal("new reports must record evaluated rule definitions")
+	}
+	legacy := r
+	legacy.SchemaVersion = 1
+	legacy.Checks = append([]model.Check(nil), r.Checks...)
+	for i := range legacy.Checks {
+		legacy.Checks[i].Specification = ""
+	}
+	legacyData, _ := json.Marshal(legacy)
+	if _, err := loadReport(legacyData); err != nil {
+		t.Fatalf("legacy report rejected: %v", err)
+	}
+	legacy.SchemaVersion = 2
+	missingSpec, _ := json.Marshal(legacy)
+	if _, err := loadReport(missingSpec); err == nil {
+		t.Fatal("schema 2 accepted missing definitions")
+	}
+	r.RuleChanges = []model.RuleChange{{ID: "x", Change: "modified", Before: "same", After: "same"}}
+	badChange, _ := json.Marshal(r)
+	if _, err := loadReport(badChange); err == nil {
+		t.Fatal("accepted empty rule modification")
+	}
+	r.RuleChanges = nil
 	// A second run replaces only recognized reports, and ignored outputs do not alter inputs.
 	cli(t, 0, "check", "--repo", dir, "--base", "HEAD", "--format", "json", "--output", jsonPath, "--html", htmlPath)
 	second, err := os.ReadFile(jsonPath)

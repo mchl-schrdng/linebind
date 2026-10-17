@@ -26,6 +26,7 @@ func Evaluate(c *Contract, files map[string][]byte) []model.Check {
 	checks := make([]model.Check, 0, len(c.Rules))
 	for _, r := range c.Rules {
 		check := model.Check{ID: r.ID, Kind: r.Kind, Reason: r.Reason, Required: r.Required, Status: "passed", Evidence: "native", Scope: slices.Clone(r.Scope), Findings: []model.Finding{}, Diagnostics: []string{}}
+		check.Specification = r.Specification
 		scope := r.Scope
 		if r.Kind == "require-files" && len(scope) == 0 {
 			scope = r.Files.Require

@@ -39,7 +39,7 @@ A wrong checksum fails closed; there is no automatic `latest` update.
 The example pins the commit introducing `action.yml`; neither v0.3.0 nor an
 `@v1` Action tag contains this new integration. Pin the Action
 source independently of the CLI release it installs. Python/Cargo formats and
-the new document predicates also require a newer CLI build; the setup Action's
+the new document predicates require CLI v0.4.0 or newer; the setup Action's
 default v0.3.0 verifier will reject those unsupported rules.
 
 For example, after the existing base checkout and candidate-fetch steps:

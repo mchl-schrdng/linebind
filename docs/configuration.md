@@ -78,7 +78,7 @@ unavailable input is reported as incomplete verification.
 
 ## Dependency names
 
-`python` and `cargo` are available in source builds after v0.3.0. The v0.3.0
+`python` and `cargo` require v0.4.0 or newer. The v0.3.0
 release supports `npm` and `go` only; older verifiers reject unsupported formats.
 
 Choose a manifest format and exactly one name policy: `allow` or `deny`.
@@ -190,7 +190,7 @@ Choose exactly one condition:
     equals: true
 ```
 
-`allowed-values` and `pattern` require a source build after v0.3.0. They are
+`allowed-values` and `pattern` require v0.4.0 or newer. They are
 positive assertions: missing fields, arrays and objects are violations. Null
 passes only when explicitly listed in `allowed-values`; regexes never coerce
 numbers, booleans, null or YAML timestamps into strings. Empty patterns and
@@ -336,7 +336,7 @@ linebind report INPUT.json [--output .linebind/report.html]
 
 The default candidate is `worktree`; `--base` is required.
 
-Source builds after v0.3.0 also accept `--base merge-base:REF`. This explicitly
+Starting with v0.4.0, `--base merge-base:REF` is also accepted. This explicitly
 selects the unique best common ancestor of `REF` and the candidate commit
 (`HEAD` for a working-tree candidate). An explicit `--head` is respected even
 when it differs from the checkout. The report records the resolved full SHA.

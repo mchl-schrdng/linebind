@@ -310,7 +310,7 @@ func (r *runner) check(name, source, variant, dir, base, hash, upstream string, 
 	if err := json.Unmarshal(data, &report); err != nil {
 		return err
 	}
-	if report.SchemaVersion != 1 || report.Status != status || report.ExitCode != code || report.Base != base || report.ContractHash != hash {
+	if (report.SchemaVersion != 1 && report.SchemaVersion != 2) || report.Status != status || report.ExitCode != code || report.Base != base || report.ContractHash != hash {
 		return fmt.Errorf("%s/%s: unexpected verdict or approved-policy provenance: %s", name, variant, data)
 	}
 	if len(report.Checks) != 1 || report.Checks[0].Status != status {
