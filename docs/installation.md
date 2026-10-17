@@ -39,9 +39,10 @@ On Windows, extract the ZIP using Explorer or `Expand-Archive`, then run
 `.\linebind.exe --version`. Each archive also includes the README, license and
 third-party notices.
 
-Run `linebind init` inside the Git repository you want to check. Review and
-commit the generated contract before using that commit as `--base`. The
-[README](../README.md#get-started) walks through the first check.
+Run `linebind init` inside the Git repository you want to check, then validate
+and preview the draft against an existing comparison commit. The
+[README](../README.md#get-started) walks through that first preview. Your
+repository's review process adopts the contract; preview does not approve it.
 
 ## GitHub Actions
 
