@@ -53,7 +53,19 @@ func evaluate(opt Options, purpose string) model.Report {
 		return fail(err)
 	}
 	r.Repository = filepath.Base(repo.Root)
-	base, err := repo.Commit(opt.Base)
+	// Resolve the candidate once so a moving ref cannot change the ancestry
+	// comparison between base selection and snapshot capture.
+	if opt.Head != "" && opt.Head != "worktree" {
+		opt.Head, err = repo.Resolve(opt.Head)
+		if err != nil {
+			return fail(err)
+		}
+	}
+	baseSHA, err := repo.ResolveBase(opt.Base, opt.Head)
+	if err != nil {
+		return fail(err)
+	}
+	base, err := repo.Commit(baseSHA)
 	if err != nil {
 		return fail(err)
 	}

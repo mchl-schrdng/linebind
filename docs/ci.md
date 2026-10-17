@@ -17,6 +17,51 @@ checks. A required command rule therefore remains unverified. Use a separately
 designed isolated execution environment before enabling those rules;
 `--allow-exec` alone does not provide isolation.
 
+## Install with the setup Action
+
+The repository now includes a composite setup Action. On a Linux x64 runner,
+replace the download/checksum/extract step with:
+
+```yaml
+- name: Install the published verifier
+  uses: mchl-schrdng/linebind@b1f1860e8d060c8c4f90c0f67bff367b5bf1e618 # setup Action
+```
+
+The Action installs v0.3.0 by default, verifies the archive against its pinned
+SHA-256 before extracting or executing it, and adds `linebind` to `PATH`.
+It also exposes an absolute `binary` output. It does not build the candidate,
+install project dependencies, choose a base, change the checkout or execute
+command rules. Keep the base/head selection, native check, artifact retention
+and required-check settings from the full workflow above. For another published
+release, supply both `version: vX.Y.Z` and its independently reviewed `sha256`.
+A wrong checksum fails closed; there is no automatic `latest` update.
+
+The example pins the commit introducing `action.yml`; neither v0.3.0 nor an
+`@v1` Action tag contains this new integration. Pin the Action
+source independently of the CLI release it installs. Python/Cargo formats and
+the new document predicates also require a newer CLI build; the setup Action's
+default v0.3.0 verifier will reject those unsupported rules.
+
+For example, after the existing base checkout and candidate-fetch steps:
+
+```yaml
+- uses: mchl-schrdng/linebind@b1f1860e8d060c8c4f90c0f67bff367b5bf1e618 # setup Action
+- name: Validate the proposal
+  env:
+    BASE_SHA: ${{ github.event.pull_request.base.sha }}
+    HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+  run: |
+    mkdir -p "$RUNNER_TEMP/linebind-report"
+    linebind preview --base "$BASE_SHA" --head "$HEAD_SHA" \
+      --format json --output "$RUNNER_TEMP/linebind-report/result.json" \
+      --html "$RUNNER_TEMP/linebind-report/report.html"
+```
+
+Use `check` instead of `preview` when your workflow intentionally enforces
+base policy. Keep artifact upload in an `if: always()` step. macOS, Windows
+and Linux ARM64 users can use the [release archives](installation.md); the
+initial Action deliberately targets the runner used by the existing PR gate.
+
 ## The command and its evidence
 
 The workflow runs this command with full SHAs supplied by the PR event:

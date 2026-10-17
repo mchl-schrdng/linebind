@@ -42,7 +42,7 @@ Usage:
 Check and preview options:
   --repo DIR         Git repository (default .)
   --contract PATH    Repository-relative contract (default .linebind.yml)
-  --base REF         Required reference; check reads its approved contract
+  --base REF         Required reference or merge-base:REF; check reads its contract
   --head REF         Candidate revision, or worktree (default worktree)
   --format FORMAT    text or json (default text)
   --agent           Compact plain-text evidence with input identifiers
@@ -161,7 +161,7 @@ func run(args []string, out, errOut io.Writer) int {
 	var base, head, format, output, html string
 	var agent, allowExec bool
 	if command == "check" || command == "preview" {
-		fs.StringVar(&base, "base", "", "reference revision; approved policy source for check")
+		fs.StringVar(&base, "base", "", "reference revision or merge-base:REF; approved policy source for check")
 		fs.StringVar(&head, "head", "worktree", "candidate revision")
 		fs.StringVar(&format, "format", "text", "text or json")
 		fs.StringVar(&output, "output", "", "text or JSON report path")

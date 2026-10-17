@@ -168,6 +168,20 @@ func documentViolation(rule *DocumentRule, n *yaml.Node) (bool, string) {
 		}
 		return !scalarEqual(n, rule.Equals), "Document value differs from the required scalar."
 	}
+	if rule.AllowedValues != nil {
+		if n != nil {
+			for _, allowed := range rule.AllowedValues {
+				if scalarEqual(n, allowed) {
+					return false, ""
+				}
+			}
+		}
+		return true, "Document value is missing or is not an allowed scalar."
+	}
+	if rule.pattern != nil {
+		return n == nil || n.Kind != yaml.ScalarNode || n.Tag != "!!str" || !rule.pattern.MatchString(n.Value),
+			"Document value must be a string matching the required pattern."
+	}
 	if n == nil {
 		return false, ""
 	}

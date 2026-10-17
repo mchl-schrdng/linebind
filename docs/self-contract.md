@@ -7,10 +7,16 @@ decisions. The published CLI checks it locally and in our
 | Rule | Decision and evidence | Boundary |
 | --- | --- | --- |
 | `public-entry-points` | Keep licensing, security, configuration, trust and agent documentation present | Presence does not establish content quality |
-| `deliberate-direct-dependencies` | Keep the three approved direct Go modules explicit | Names from `go.mod`, not versions, vulnerabilities, transitives or an import graph |
+| `deliberate-direct-dependencies` | Keep the four approved direct Go modules explicit | Names from `go.mod`, not versions, vulnerabilities, transitives or an import graph |
 | `pure-native-contract-package` | Reject selected process, network and filesystem calls in the native evaluator | Lexical detection, including comments and tests; aliases and other APIs can escape it |
 | `bundled-agent-guidance` | Keep the embedded skill and both operating/authoring references | Presence does not prove skill discovery or agent compliance |
 | `report-network-references` | Reject literal remote URLs in HTML attributes/CSS imports and selected JavaScript network calls in the report template | Lexical detection, not a browser/network sandbox; constructed URLs and other APIs are outside its coverage |
+
+The fourth direct module, `github.com/pelletier/go-toml/v2`, parses Python and
+Cargo manifests from captured bytes. It adds no transitive runtime dependency
+and keeps process/network/filesystem access outside the native evaluator. This
+is an explicit dependency-policy proposal; retain the old-base `check` showing
+the new module and policy edit alongside the proposed-contract `preview`.
 
 The normal Go tests, actual external-tool trials and report interaction tests
 remain separate CI checks. We do not express UI elegance, overall security or

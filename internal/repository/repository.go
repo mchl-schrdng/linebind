@@ -63,6 +63,42 @@ func (r *Repository) Resolve(ref string) (string, error) {
 	return strings.TrimSpace(string(b)), nil
 }
 
+// ResolveBase is explicit opt-in shorthand; ancestry does not establish approval.
+func (r *Repository) ResolveBase(base, candidate string) (string, error) {
+	ref, mergeBase := strings.CutPrefix(base, "merge-base:")
+	if !mergeBase {
+		return r.Resolve(base)
+	}
+	left, err := r.Resolve(ref)
+	if err != nil {
+		return "", err
+	}
+	if candidate == "" || candidate == "worktree" {
+		candidate = "HEAD"
+	}
+	right, err := r.Resolve(candidate)
+	if err != nil {
+		return "", err
+	}
+	// A shallow boundary can hide a better ancestor, even when Git finds one.
+	shallow, err := r.git(nil, 4096, "rev-parse", "--is-shallow-repository")
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(string(shallow)) != "false" {
+		return "", fmt.Errorf("merge-base requires complete history; fetch it explicitly or supply a known base SHA")
+	}
+	out, err := r.git(nil, 4096, "merge-base", "--all", left, right)
+	if err != nil {
+		return "", fmt.Errorf("find merge-base (no automatic fetch): %w", err)
+	}
+	bases := strings.Fields(string(out))
+	if len(bases) != 1 {
+		return "", fmt.Errorf("merge-base requires exactly one common ancestor, found %d; choose an explicit base SHA", len(bases))
+	}
+	return bases[0], nil
+}
+
 func SafePath(p string) bool {
 	if p == "" || !utf8.ValidString(p) || strings.ContainsAny(p, "\\\x00\r\n") || path.IsAbs(p) || path.Clean(p) != p {
 		return false

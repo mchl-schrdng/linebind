@@ -79,12 +79,22 @@ specialist verifier when syntax or module resolution matters.
 
 ### Declared dependency names
 
-Use the complete example above. `dependencies.format` is `npm` or `go`; choose
+Use the complete example above. `dependencies.format` is `npm` or `go` in v0.3.0;
+source builds after v0.3.0 also support `python` and `cargo`. Choose
 exactly one of `allow: [names]` or `deny: [names]`. Names are exact, not globs.
 An empty `allow: []` permits no direct dependencies; an empty deny list is
 invalid. npm `sections` may contain `dependencies`, `devDependencies`,
 `peerDependencies`, and `optionalDependencies`; omitting it checks all four.
 For Go, use `scope: [go.mod]`, `format: go`, and no `sections`.
+
+Python reads `pyproject.toml` sections `project.dependencies`,
+`project.optional-dependencies` and `build-system.requires` by default. Names
+use Python's lowercase/dot/underscore/hyphen normalization. Cargo reads
+`dependencies`, `dev-dependencies` and `build-dependencies`, including target
+tables and local `workspace.dependencies` declarations. `sections` can narrow
+these defaults. Include all relevant manifests in `scope`. Dynamic Python
+metadata and Cargo workspace inheritance remain unverified, as do non-registry
+sources; neither format executes packaging tools or resolves a graph.
 
 This checks declarations, not versions, vulnerabilities, lockfile integrity,
 or the resolved transitive graph. Go checks direct `require` entries; local
@@ -106,7 +116,11 @@ leave identity unverified. Do not promise more than the manifest evidence.
 Choose exactly one document condition: `required: true` requires an existing,
 non-null value; `equals: VALUE` requires the selected scalar or null; or
 `forbidden-values: [VALUES]` rejects those existing scalar values but allows
-absence. This nested `document.required` differs from the rule's advisory flag.
+absence. Source builds after v0.3.0 also accept `allowed-values: [VALUES]`
+(a nonempty scalar list; missing values fail) or `pattern: REGEX` (an existing
+string matching a Go/RE2 expression; anchor it for whole-string matching).
+Confirm the installed verifier supports these conditions before using them.
+This nested `document.required` differs from the rule's advisory flag.
 Selectors use JSON Pointer-style segments, numeric array indexes, and `*` for
 children. Files must be JSON, YAML, or YML. This is a focused assertion about
 declarations, not full schema validation or proof about live systems or rows.

@@ -57,7 +57,7 @@ or executing project code.
 | --- | --- | --- |
 | [`require-files`](docs/configuration.md#require-files) | Keep `README.md`, `LICENSE` and `docs/architecture.md`. | Each required path or glob matches at least one file. Presence does not establish content quality. |
 | [`forbid-text`](docs/configuration.md#forbid-text) | Keep the marker `DEBUG_ONLY` out of `src/`. | A Go/RE2 regular expression does not match the selected text. Comments and strings are included; this is not language or import analysis. |
-| [`dependencies`](docs/configuration.md#dependency-names) | Permit only React and React DOM as runtime dependencies, or forbid jQuery. | Declared names satisfy an allowlist or denylist in `package.json` or `go.mod`. This does not resolve transitive dependencies, enforce version ranges or audit vulnerabilities. |
+| [`dependencies`](docs/configuration.md#dependency-names) | Permit only React and React DOM as runtime dependencies, or forbid jQuery. | Declared names satisfy an allowlist or denylist in npm, Go, Python or Cargo manifests (see version availability below). This does not resolve transitive dependencies, enforce version ranges or audit vulnerabilities. |
 | [`document`](docs/configuration.md#json-and-yaml-values) | Preserve `type: module`, a declared API operation, or `runAsNonRoot: true`. | Selected JSON/YAML values satisfy an explicit condition. This checks declarations, not a running service, deployment or dataset. |
 | [`command`](docs/configuration.md#project-commands) | Enforce module boundaries or require a SQL transformation to produce unique IDs. | An installed tool or supplied script reports the configured outcome. Its coverage comes from that verifier and its policy. |
 
@@ -71,11 +71,18 @@ For **document rules**, choose one condition per rule:
 
 - `document.required: true`: the selected value must exist and be non-null.
 - `document.equals`: it must equal the specified scalar or null value.
+- `document.allowed-values`: it must equal a member of a nonempty scalar list.
+- `document.pattern`: it must be a string matching a Go/RE2 regex.
 - `document.forbidden-values`: an existing value must not equal a listed value;
   this condition alone allows the value to be absent.
 
 Selectors can traverse objects and arrays, including `*` for their children.
 These are focused assertions, not complete JSON Schema or OpenAPI validation.
+
+Python/Cargo dependency formats, `allowed-values`, `pattern` and the local
+`--base merge-base:REF` shorthand are available in source builds after v0.3.0.
+The currently published v0.3.0 binary does not support them. See the
+[configuration reference](docs/configuration.md) for examples and exact limits.
 
 For **command rules**, `command.format` selects one of three result formats:
 
