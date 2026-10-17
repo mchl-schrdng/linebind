@@ -1,8 +1,19 @@
 # Conftest Kubernetes example
 
-This example applies a real Rego policy to a Kubernetes Pod. A container with
-`securityContext.privileged: true` crosses the rule. The policy checks this one
-property; it does not validate the complete Kubernetes schema or a live cluster.
+This example applies a real Rego policy to Kubernetes v1 Pods in `infra/`,
+including `.yaml` and `.yml` files and every document in a YAML stream. Regular,
+init and ephemeral containers must omit `securityContext.privileged` or set it
+to boolean `false`. A `true`, string or null value crosses the rule. Omitting
+the field is permitted because privileged mode defaults to false.
+
+Unsupported resource kinds, missing or empty `spec.containers`, malformed
+container groups and malformed security contexts cross this example's rule;
+they cannot silently bypass the Pod check. The policy validates only this
+property and the shapes needed to inspect it. It is not a complete Kubernetes
+schema, Pod Security Standards implementation or live-cluster verifier.
+Deployment templates, Helm output, Windows host processes and resources outside
+`infra/` need their own explicit policy and scope. It does not establish that
+containers run as non-root.
 
 Validated with [Conftest **0.62.0**](https://github.com/open-policy-agent/conftest/releases/tag/v0.62.0)
 (OPA **1.6.0**) on macOS arm64. Install the pinned official release, verify its
@@ -37,3 +48,8 @@ unverified result. Failures and warnings both cross the Linebind rule. Combined
 or stdin results without an individual scoped filename are unsupported.
 
 Official result structure: [Conftest 0.62.0 output](https://github.com/open-policy-agent/conftest/blob/v0.62.0/output/result.go).
+
+The mutation panel in `internal/app/policy_panel_test.go` exercises normal
+changes, all three container groups, malformed shapes, unsupported resource
+kinds and YAML streams against this exact policy. Kubernetes documents the
+three relevant fields in its [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/).

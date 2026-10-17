@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -248,33 +247,7 @@ func TestRealToolExamples(t *testing.T) {
 			if bin == "" {
 				t.Skip("set the LINEBIND tool path to test committed examples")
 			}
-			read := func(directory string, snapshot *repository.Snapshot) {
-				t.Helper()
-				err := filepath.WalkDir(directory, func(path string, entry fs.DirEntry, walkErr error) error {
-					if walkErr != nil {
-						return walkErr
-					}
-					if entry.IsDir() {
-						return nil
-					}
-					rel, err := filepath.Rel(directory, path)
-					if err != nil {
-						return err
-					}
-					data, err := os.ReadFile(path)
-					if err != nil {
-						return err
-					}
-					snapshot.Files[filepath.ToSlash(rel)] = data
-					return nil
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-			}
-			base := &repository.Snapshot{Files: map[string][]byte{}}
-			directory := filepath.Join("..", "..", "examples", name)
-			read(filepath.Join(directory, "base"), base)
+			base := loadExampleSnapshot(t, name, "base")
 			cases := []struct {
 				scenario string
 				exit     int
@@ -292,7 +265,9 @@ func TestRealToolExamples(t *testing.T) {
 						candidate.Files[path] = data
 					}
 					if tc.scenario != "base" {
-						read(filepath.Join(directory, tc.scenario), candidate)
+						for path, data := range loadExampleSnapshot(t, name, tc.scenario).Files {
+							candidate.Files[path] = data
+						}
 					}
 					config, err := contract.Load(base.Files[".linebind.yml"])
 					if err != nil {

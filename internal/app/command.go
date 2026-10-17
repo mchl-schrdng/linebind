@@ -256,9 +256,12 @@ func dependencyFindings(rule contract.Rule, data []byte, root string, files map[
 				AllowedSeverity string            `json:"allowedSeverity"`
 			} `json:"ruleSetUsed"`
 			Violations *[]struct {
-				From string `json:"from"`
-				To   string `json:"to"`
-				Type string `json:"type"`
+				From  string `json:"from"`
+				To    string `json:"to"`
+				Type  string `json:"type"`
+				Cycle []struct {
+					Name string `json:"name"`
+				} `json:"cycle"`
 				Rule struct {
 					Name     string `json:"name"`
 					Severity string `json:"severity"`
@@ -321,6 +324,7 @@ func dependencyFindings(rule contract.Rule, data []byte, root string, files map[
 	}
 	covered, cores := map[string]bool{}, map[string]bool{}
 	referenced, invalid := map[string]bool{}, map[string]bool{}
+	edges := map[string]bool{}
 	var incomplete error
 	for _, module := range *result.Modules {
 		if module.Valid == nil || module.Dependencies == nil {
@@ -366,6 +370,7 @@ func dependencyFindings(rule contract.Rule, data []byte, root string, files map[
 				}
 				referenced[target] = true
 			}
+			edges[p+"\x00"+target] = true
 			if !*dep.Valid {
 				invalid[p+"\x00"+target] = true
 			}
@@ -398,7 +403,27 @@ func dependencyFindings(rule contract.Rule, data []byte, root string, files map[
 				return findings, fmt.Errorf("violation target is outside the captured snapshot: %s", target)
 			}
 		}
-		findings = append(findings, externalFinding(rule, p, target, v.Rule.Name+": dependency rule violated"))
+		message := v.Rule.Name + ": dependency rule violated"
+		if v.Type == "cycle" {
+			// The tool reports a cycle once, but marks every participating edge
+			// invalid. Only a closed path present in the graph can account for it.
+			current := p
+			cycle := []string{p}
+			for i, hop := range v.Cycle {
+				next, err := findingPath(hop.Name, root)
+				if err != nil || !covered[next] || !slices.Contains(selected, current) || !edges[current+"\x00"+next] || (i == 0 && next != target) {
+					return findings, fmt.Errorf("cycle does not describe scoped dependency edges")
+				}
+				delete(invalid, current+"\x00"+next)
+				cycle = append(cycle, next)
+				current = next
+			}
+			if len(v.Cycle) == 0 || current != p {
+				return findings, fmt.Errorf("dependency cycle is not closed")
+			}
+			message = v.Rule.Name + ": dependency cycle: " + strings.Join(cycle, " -> ")
+		}
+		findings = append(findings, externalFinding(rule, p, target, message))
 		delete(invalid, p+"\x00"+target)
 		if v.Type == "module" {
 			delete(invalid, p+"\x00")

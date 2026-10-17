@@ -53,7 +53,10 @@ def check():
     if not rows or nulls or duplicates:
         print(f"FAIL: rows={len(rows)}, null order_id={nulls}, duplicate order_id={duplicates}")
         return 1
-    print(f"PASS: {len(rows)} rows have unique, non-null order_id values")
+    if dict(rows) != dict(inputs):
+        print("FAIL: output must preserve every input order_id and its customer_id")
+        return 1
+    print(f"PASS: {len(rows)} rows preserve unique order keys and customer assignments")
     return 0
 
 

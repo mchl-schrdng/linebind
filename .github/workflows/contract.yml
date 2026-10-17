@@ -54,6 +54,20 @@ jobs:
           tar -xzf "$archive" -C "$RUNNER_TEMP/linebind-bin" linebind
           "$RUNNER_TEMP/linebind-bin/linebind" --version
 
+      - name: Record the adopted contract as review evidence
+        id: adopted-evidence
+        run: |
+          mkdir -p "$RUNNER_TEMP/linebind-report"
+          status=0
+          "$RUNNER_TEMP/linebind-bin/linebind" check \
+            --repo "$GITHUB_WORKSPACE" \
+            --base "$BASE_SHA" --head "$HEAD_SHA" \
+            --format json --output "$RUNNER_TEMP/linebind-report/adopted.json" \
+            --html "$RUNNER_TEMP/linebind-report/adopted.html" || status=$?
+          printf '%s\n' "$status" > "$RUNNER_TEMP/linebind-report/adopted-exit-code.txt"
+          case "$status" in 0|1|2) ;; *) exit "$status" ;; esac
+          printf 'Adopted-contract comparison: exit **%s** (review evidence, not the merge gate). See the adopted reports in the artifact. The required gate validates the proposed contract below.\n' "$status" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Validate the candidate under its proposed contract
         run: |
           mkdir -p "$RUNNER_TEMP/linebind-report"

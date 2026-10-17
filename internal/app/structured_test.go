@@ -117,6 +117,77 @@ func TestDependencyResultsCannotEraseInvalidityWithCaseAliases(t *testing.T) {
 	}
 }
 
+func TestDependencyCycleEvidence(t *testing.T) {
+	files := map[string][]byte{"src/a.js": {}, "src/b.js": {}, "src/c.js": {}}
+	selected := []string{"src/a.js", "src/b.js"}
+	cycleOutput := func() map[string]any {
+		var output map[string]any
+		if err := json.Unmarshal([]byte(validCruise), &output); err != nil {
+			t.Fatal(err)
+		}
+		output["modules"].([]any)[1].(map[string]any)["dependencies"] = []any{
+			map[string]any{"resolved": "src/a.js", "couldNotResolve": false, "valid": false},
+		}
+		violation := output["summary"].(map[string]any)["violations"].([]any)[0].(map[string]any)
+		violation["type"] = "cycle"
+		violation["cycle"] = []any{map[string]any{"name": "src/b.js"}, map[string]any{"name": "src/a.js"}}
+		return output
+	}
+	data, _ := json.Marshal(cycleOutput())
+	findings, err := dependencyFindings(adapterRule(), data, "/snapshot", files, selected)
+	if err != nil || len(findings) != 1 || !strings.Contains(findings[0].Message, "src/a.js -> src/b.js -> src/a.js") {
+		t.Fatalf("a single cycle summary must account for both edges: %+v %v", findings, err)
+	}
+	for name, edit := range map[string]func(map[string]any, map[string]any){
+		"empty cycle": func(_ map[string]any, v map[string]any) { v["cycle"] = []any{} },
+		"open cycle": func(_ map[string]any, v map[string]any) {
+			v["cycle"] = []any{map[string]any{"name": "src/b.js"}}
+		},
+		"wrong first edge": func(_ map[string]any, v map[string]any) { v["to"] = "src/a.js" },
+		"edge absent from graph": func(x map[string]any, _ map[string]any) {
+			x["modules"].([]any)[1].(map[string]any)["dependencies"] = []any{}
+		},
+		"uncaptured hop": func(_ map[string]any, v map[string]any) {
+			v["cycle"] = []any{map[string]any{"name": "src/b.js"}, map[string]any{"name": "src/c.js"}, map[string]any{"name": "src/a.js"}}
+		},
+		"escaping hop": func(_ map[string]any, v map[string]any) {
+			v["cycle"] = []any{map[string]any{"name": "../escape.js"}, map[string]any{"name": "src/a.js"}}
+		},
+		"unrelated invalid edge": func(x map[string]any, _ map[string]any) {
+			b := x["modules"].([]any)[1].(map[string]any)
+			b["dependencies"] = append(b["dependencies"].([]any), map[string]any{"resolved": "src/b.js", "couldNotResolve": false, "valid": false})
+		},
+		"unrelated invalid module": func(x map[string]any, _ map[string]any) {
+			x["modules"].([]any)[1].(map[string]any)["valid"] = false
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			output := cycleOutput()
+			v := output["summary"].(map[string]any)["violations"].([]any)[0].(map[string]any)
+			edit(output, v)
+			data, _ := json.Marshal(output)
+			if _, err := dependencyFindings(adapterRule(), data, "/snapshot", files, selected); err == nil {
+				t.Fatal("inconsistent cycle evidence accepted")
+			}
+		})
+	}
+	if _, err := dependencyFindings(adapterRule(), data, "/snapshot", files, selected[:1]); err == nil {
+		t.Fatal("out-of-scope cycle edge accepted")
+	}
+	output := cycleOutput()
+	modules := output["modules"].([]any)
+	modules[1].(map[string]any)["dependencies"].([]any)[0].(map[string]any)["resolved"] = "src/c.js"
+	output["modules"] = append(modules, map[string]any{"source": "src/c.js", "valid": true, "dependencies": []any{map[string]any{"resolved": "src/a.js", "couldNotResolve": false, "valid": false}}})
+	summary := output["summary"].(map[string]any)
+	summary["totalCruised"] = 3
+	summary["violations"].([]any)[0].(map[string]any)["cycle"] = []any{map[string]any{"name": "src/b.js"}, map[string]any{"name": "src/c.js"}, map[string]any{"name": "src/a.js"}}
+	data, _ = json.Marshal(output)
+	other, err := dependencyFindings(adapterRule(), data, "/snapshot", files, append(selected, "src/c.js"))
+	if err != nil || len(other) != 1 || other[0].Fingerprint == findings[0].Fingerprint {
+		t.Fatalf("different cycle with same first edge must have its own identity: %+v %v", other, err)
+	}
+}
+
 func TestConftestResultsRequireEvaluatedPolicies(t *testing.T) {
 	rule := adapterRule()
 	rule.Command.Format = "conftest"

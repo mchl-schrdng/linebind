@@ -3,6 +3,9 @@
 Small, focused pull requests are welcome. Describe the repository decision you
 want to verify, the current behavior, and the expected result. For a new check,
 include a minimal passing case, a failing case, and a case that cannot be verified.
+For architecture or behavior recipes, include a permitted refactor and an
+indirect violation of the same decision. Keep unsupported cases and known gaps
+explicit; a count of passing tests is not a detection rate.
 Discuss changes to the contract or report format in an issue before implementing
 a broad redesign.
 
@@ -34,6 +37,12 @@ absolute executable paths:
 LINEBIND_DEPCRUISE=/path/to/depcruise LINEBIND_CONFTEST=/path/to/conftest \
   go test -race ./internal/app -run '^TestReal' -v
 ```
+
+This includes the architecture, Pod and SQLite mutation panels, which read the
+actual example policies. They create disposable snapshots, execute only the
+declared tools/checkers and retain no generated repository tree. Python is
+required for the SQLite panel. See [validation](docs/validation.md#stability-panels)
+for the decisions tested and the limits these examples do not close.
 
 The race detector requires a supported C toolchain. CI disables npm lifecycle
 scripts and verifies the conftest release archive against its pinned upstream
