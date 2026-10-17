@@ -12,6 +12,9 @@
   <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush">
     <img src="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="CI — main branch">
   </a>
+  <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/codeql.yml">
+    <img src="https://github.com/mchl-schrdng/linebind/actions/workflows/codeql.yml/badge.svg" alt="CodeQL analysis">
+  </a>
   <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/contract.yml?query=event%3Apull_request">
     <img src="https://github.com/mchl-schrdng/linebind/actions/workflows/contract.yml/badge.svg?event=pull_request" alt="Repository contract — latest pull request run">
   </a>
@@ -34,17 +37,25 @@ package installation or model API. Results stay readable in the terminal,
 JSON and a self-contained, offline HTML report.
 
 <p align="center">
-  <a href="docs/assets/report-v0.4.0/report-crossed.jpg">
-    <img src="docs/assets/report-v0.4.0/report-crossed.jpg" alt="Actual Linebind v0.4.0 report: one runtime dependency crosses the contract, four checks pass, and the selected rule explains the finding and next step.">
+  <a href="docs/assets/report-v0.4.0/mac/line-mac.png">
+    <img src="docs/assets/report-v0.4.0/mac/line-mac.png" alt="The contract line in a Mac-style window on a vivid desktop: one required dependency rule crosses the boundary, four checks pass.">
   </a>
 </p>
 
-<p align="center"><sub>Actual v0.4.0 report from a disposable frontend fixture. Four checks pass; an undeclared runtime dependency crosses the contract. <a href="docs/assets/README.md">Capture notes and evidence</a></sub></p>
+<p align="center"><sub>Four checks pass. One dependency crosses the boundary. Real v0.4.0 evidence in a Mac-style presentation. <a href="docs/assets/README.md">Capture notes</a></sub></p>
 
 In the HTML report, each mark represents a declared check. Select a mark to
 read its reason, evaluated rule, evidence and next step. Required failures rise
 above the line; advisory failures sit below it. Hollow marks mean verification
 is incomplete.
+
+<p align="center">
+  <a href="docs/assets/report-v0.4.0/mac/report-mac.png">
+    <img src="docs/assets/report-v0.4.0/mac/report-mac.png" alt="Complete Linebind report in a Mac-style browser window: contract line, all five checks, selected dependency evidence, next step, provenance and footer.">
+  </a>
+</p>
+
+<p align="center"><sub>The complete interface: declared checks, evidence and provenance in one offline report.</sub></p>
 
 ## Get started
 
@@ -102,6 +113,14 @@ Remove an accidental dependency and rerun the check. If the project deliberately
 needs a new package, propose the dependency and contract change together. The
 report keeps that policy change visible for review.
 
+<p align="center">
+  <a href="docs/assets/report-v0.4.0/mac/terminal-mac.png">
+    <img src="docs/assets/report-v0.4.0/mac/terminal-mac.png" alt="Mac-style Terminal showing captured Linebind v0.4.0 output: the runtime dependency rule rejects jquery, explains the reason and next step, and returns exit code 1.">
+  </a>
+</p>
+
+<p align="center"><sub>The same rule, straight from the CLI. Captured stdout from the one-rule README fixture; exit <code>1</code>. <a href="docs/assets/README.md">Output and reproduction</a></sub></p>
+
 ## What can a contract check?
 
 | Rule | Example decision | What it checks |
@@ -144,8 +163,8 @@ to evaluate a committed candidate. Editing the candidate allowlist does not
 change the rules used by `check`.
 
 <p align="center">
-  <a href="docs/assets/report-v0.4.0/report-preview.jpg">
-    <img src="docs/assets/report-v0.4.0/report-preview.jpg" alt="Actual Linebind v0.4.0 preview: proposed checks pass, Preview / not approved remains visible, and before/after YAML shows zod added to the dependency allowlist.">
+  <a href="docs/assets/report-v0.4.0/mac/preview-mac.png">
+    <img src="docs/assets/report-v0.4.0/mac/preview-mac.png" alt="Linebind preview in a Mac-style window: Preview / not approved stays visible above the passing result and full before/after YAML showing zod added to the allowlist.">
   </a>
 </p>
 
@@ -157,13 +176,14 @@ proposal in this repository. [Trust model](docs/trust-model.md)
 
 ## Tested in CI
 
-The badges show the latest **`main` push CI**, **pull-request contract run**
-and **tagged release run**. Each links to its workflow history; the PR badge
-is the latest run, not an aggregate of every open PR.
+The badges link to **`main` CI**, **CodeQL analysis**, the latest
+**pull-request contract run** and **tagged releases**. Each opens its workflow
+history; the PR contract badge is not an aggregate of every open PR.
 
 | Workflow | What it verifies |
 | --- | --- |
 | [CI](.github/workflows/ci.yml) | Go tests and vet on Linux, macOS and Windows; six release archives and checksums; installed and extracted binaries; runnable examples; minimum Go version; real external-tool adapters; report interactions; setup Action installation. |
+| [CodeQL](.github/workflows/codeql.yml) | Static security analysis of Go packages built on Linux, with findings published to GitHub code scanning. Runs on PRs and pushes to `main`. |
 | [Repository contract](.github/workflows/contract.yml) | Each PR's proposed contract against explicit base/head commits, using a checksum-pinned published verifier. JSON and offline HTML evidence are retained, including on failure. |
 | [Release](.github/workflows/release.yml) | Runs the CI suite for a version tag, then publishes the tested archives and checksums. |
 
@@ -171,6 +191,9 @@ The contract workflow uses `preview`: valid policy edits can pass proposal
 validation. Required violations, incomplete required checks and invalid
 contracts fail the job. `main` requires its configured test and contract checks
 to pass before merging.
+
+A passing CodeQL badge means the analysis completed successfully; it does not
+mean the repository has no security findings.
 
 The setup Action supports Linux x64. Its default verifier and this repository's
 contract gate are independently pinned to **v0.3.0**; they do not automatically

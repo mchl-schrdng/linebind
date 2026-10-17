@@ -111,6 +111,12 @@ This repository's `main` uses **Main requires passing CI** with:
 - No bypass actors, force pushes or branch deletion.
 - Zero required approving reviews: the sole maintainer can merge after CI passes.
 
+The separate [CodeQL workflow](../.github/workflows/codeql.yml) analyzes Go
+packages built on Linux for PRs and pushes to `main`, and uploads findings to
+GitHub code scanning. Its `CodeQL (Go)` job is not currently one of the seven
+required checks. A passing workflow means analysis completed; review the
+findings themselves in the Security tab.
+
 A failed required test blocks merging, including for the owner and coding agents
 under these rules. Administrators can still change repository settings; the
 ruleset does not remove that administrative power. Never disable protections
