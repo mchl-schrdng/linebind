@@ -100,6 +100,55 @@ try {
   assert.deepEqual(report.checks.map(check => check.status), ['passed', 'crossed', 'unverified']);
   assert.equal(report.contract_changes.length, 1);
 
+  await test('the line selects the same clause, restores filtered checks and preserves native anchors', () => {
+    const dom = parse(html, { scripts: true });
+    const document = dom.window.document;
+    const marks = [...document.querySelectorAll('[data-line-check]')];
+    assert.equal(marks.length, report.checks.length);
+    assert.equal(marks[1].getAttribute('aria-current'), 'true');
+    document.querySelector('[data-filter="attention"]').click();
+    marks[0].click();
+    selected(dom, 0);
+    assert.equal(marks[0].getAttribute('aria-current'), 'true');
+    assert.equal(document.querySelector('[data-filter="all"]').getAttribute('aria-pressed'),'true');
+    assert.equal(dom.window.location.hash,'#check-0');
+    const plain = parse(html).window.document;
+    assert.equal(plain.querySelector('[data-line-check]').getAttribute('href'),'#check-0');
+    assert.equal(plain.querySelector('.definition pre').textContent,report.checks[0].specification);
+    assert.equal(plain.querySelector('details:not([open])'),null,'all evidence stays expanded without scripts');
+  });
+
+  await test('printing exposes all definitions and restores the reader’s expanded sections', () => {
+    const dom=parse(html,{scripts:true}),document=dom.window.document;
+    const chosen=document.querySelector('.definition');chosen.open=true;
+    const previouslyClosed=[...document.querySelectorAll('details:not([open])')];
+    dom.window.dispatchEvent(new dom.window.Event('beforeprint'));
+    assert.equal(document.querySelector('details:not([open])'),null);
+    dom.window.dispatchEvent(new dom.window.Event('afterprint'));
+    assert.equal(chosen.open,true);
+    previouslyClosed.forEach(detail=>assert.equal(detail.open,false));
+  });
+
+  await test('copy check preserves context and only the selected check evidence, with accessible fallback', async () => {
+    const copied = [];
+    const dom = parse(html, {scripts:true,clipboard:{writeText:async text=>copied.push(text)}});
+    const document=dom.window.document;
+    document.querySelector('[data-copy-check="1"]').click();
+    await tick();
+    const text=copied[0];
+    for(const value of ['Single-check excerpt','Contract hash: '+report.contract_hash,'Input digest: '+report.input_digest,'[Crossed] no-debug-marker',report.checks[1].specification])assert.ok(text.includes(value),value);
+    assert.ok(!text.includes('[Passed] readme-present'));
+    assert.ok(!text.includes('[Not verified] document-readable'));
+    const denied=parse(html,{scripts:true});
+    const button=denied.window.document.querySelector('[data-copy-check="1"]');
+    button.click();await tick();
+    const field=denied.window.document.querySelector('textarea');
+    assert.equal(field.getAttribute('aria-label'),'Check diagnostic');
+    assert.equal(field.value,text);
+    field.dispatchEvent(new denied.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+    assert.equal(denied.window.document.activeElement,button);
+  });
+
   await test('real CLI evidence is readable without JavaScript and hostile markup stays text', () => {
     const dom = parse(html);
     const document = dom.window.document;
@@ -260,6 +309,7 @@ try {
     const proposed = JSON.parse(readFileSync(previewJSON, 'utf8'));
     assert.equal(proposed.purpose, 'preview');
     assert.equal(proposed.contract_changes.length, 1);
+    assert.equal(proposed.rule_changes, undefined, 'comment-only edits do not change rule definitions');
     const copied = [];
     const dom = parse(readFileSync(previewHTML, 'utf8'), { scripts: true, clipboard: { writeText: async text => copied.push(text) } });
     const document = dom.window.document;
@@ -273,8 +323,28 @@ try {
     assert.equal(copied.length, 1);
     assert.match(copied[0], /PREVIEW.*NOT APPROVED/);
     assert.match(copied[0], /does not approve the policy change/);
+    document.querySelector('[data-copy-check="0"]').click();
+    await tick();
+    assert.match(copied[1], /PREVIEW.*NOT APPROVED/);
+    assert.match(copied[1], /Policy source: candidate/);
     const gate = spawnSync(resolve(binary), ['check', '--repo', repo, '--base', 'HEAD'], { encoding: 'utf8' });
     assert.equal(gate.status, 1, 'preview must not approve the policy change');
+  });
+
+  await test('rule changes retain before and after definitions without interpreting them as approval', () => {
+    const proposed=structuredClone(contract);
+    proposed.rules[1].required=false;
+    writeFileSync(join(repo,'.linebind.yml'),JSON.stringify(proposed));
+    const target=join(temp,'changed.html');
+    const result=spawnSync(resolve(binary),['preview','--repo',repo,'--base','HEAD','--html',target],{encoding:'utf8'});
+    assert.equal(result.status,0,result.stderr);
+    const doc=parse(readFileSync(target,'utf8')).window.document;
+    const diff=doc.querySelector('.rule-diff');
+    assert.match(diff.querySelector('summary').textContent,/modified.*no-debug-marker/);
+    const sides=diff.querySelectorAll('pre');
+    assert.match(sides[0].textContent,/required: true/);
+    assert.match(sides[1].textContent,/required: false/);
+    assert.match(doc.querySelector('#preview-title').textContent,/not approved/i);
   });
 
   for (const { dom, errors, requests } of documents) {

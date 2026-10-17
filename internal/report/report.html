@@ -44,9 +44,40 @@
     .summary{margin:0;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:7px 15px}
     .summary span{white-space:nowrap}
     .summary strong{font-weight:600;color:var(--ink)}
+    .summary,.nav-count,.clause-properties,.provenance dd{font-variant-numeric:tabular-nums}
     .copy-button{border:1px solid #c9d0c9;background:transparent;border-radius:5px;padding:7px 11px;font-size:12px;color:var(--ink);display:none;align-items:center;gap:7px;white-space:nowrap}
     .enhanced .copy-button{display:inline-flex}
     .copy-button:hover{background:var(--surface);border-color:#aeb8ad}
+    .clause-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .definition{margin:18px 0;padding:12px 0;border-bottom:1px solid var(--line)}
+    .definition summary{cursor:pointer;font-size:12px;color:var(--muted)}
+    .definition pre,.rule-diff pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.65 var(--mono);background:var(--paper);padding:14px;margin:12px 0 0;border-radius:3px}
+    .rule-diff{margin-top:12px;border-top:1px solid #e5dac5;padding-top:12px}
+    .rule-diff summary{cursor:pointer;font-size:12px;overflow-wrap:anywhere}
+    .rule-diff-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:12px}
+    .rule-diff-grid h3{font-size:12px;font-weight:550;margin:0;color:var(--muted)}
+    .contract-line{margin:0 0 25px;--axis:72px;--offset:40px;--label-top:122px;--mark-height:156px;--mark-width:120px}
+    .line-heading{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:10px}
+    .line-track{display:grid;grid-template-columns:repeat(auto-fit,minmax(var(--mark-width),1fr));padding:0 10px;position:relative}
+    .line-track:before,.line-track:after{content:"";position:absolute;top:calc(var(--axis) - 18px);height:36px;width:8px;border:1.5px solid var(--ink)}
+    .line-track:before{left:0;border-right:0}.line-track:after{right:0;border-left:0}
+    .line-point{display:block;position:relative;min-width:0;text-align:center;text-decoration:none;padding:var(--label-top) 8px 10px;min-height:var(--mark-height);border-radius:3px}
+    .line-point:before{content:"";position:absolute;top:var(--axis);left:0;right:0;height:1px;background:var(--line)}
+    .line-point[aria-current="true"]{background:#25282506}
+    .line-glyph{position:absolute;top:calc(var(--axis) - 4px);left:calc(50% - 4px);width:8px;height:8px;background:var(--ink);border-radius:50%}
+    .line-point.crossed .line-glyph{top:calc(var(--axis) - var(--offset) - 4px);background:var(--crossed);border-radius:0;transform:rotate(45deg)}
+    .line-point.crossed .line-stem{position:absolute;left:50%;top:calc(var(--axis) - var(--offset) + 4px);width:1px;height:calc(var(--offset) - 4px);background:var(--crossed)}
+    .line-point.crossed[data-required="false"] .line-glyph{top:calc(var(--axis) + var(--offset) - 4px)}
+    .line-point.crossed[data-required="false"] .line-stem{top:var(--axis)}
+    .line-point.unverified .line-glyph{top:calc(var(--axis) - 10px);left:calc(50% - 10px);width:20px;height:20px;border:1.5px solid var(--unverified);color:var(--unverified);background:var(--paper);font:11px/17px var(--mono)}
+    .line-number{display:block;color:var(--muted);font:11px var(--mono);margin-bottom:5px}
+    .line-name{display:block;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+    .line-legend{display:flex;gap:8px 18px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:10px}
+    .line-legend span{white-space:nowrap}
+    .compact{--axis:48px;--offset:30px;--label-top:88px;--mark-height:110px;--mark-width:44px}
+    .compact .line-name{display:none}
+    .compact .line-point{padding-left:3px;padding-right:3px}
+    .line-point:focus-visible .line-name{display:block}
     .section-label{margin:0;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:650;color:var(--muted)}
     .notice{margin-bottom:24px;border:1px solid #d8c9a8;background:#f8f3e8;border-radius:7px;padding:18px 22px}
     .notice-head{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:14px;font-weight:600}
@@ -131,7 +162,8 @@
     @media(max-width:860px){.shell{width:calc(100% - 40px)}.workspace{grid-template-columns:240px minmax(0,1fr)}.clause-panel{padding:25px 23px}.repo-row{align-items:flex-start;flex-direction:column;gap:10px}.hero{padding-top:30px}.hero-bottom{gap:14px}.summary{gap:6px 11px}}
     @media(max-width:620px){.shell{width:calc(100% - 32px)}.masthead{padding:23px 0 21px}.masthead-note{font-size:9px;letter-spacing:.9px}.brand{font-size:22px;gap:9px}.brand svg{width:25px;height:25px}.hero{padding:26px 0}.hero-title{gap:11px}.status-mark{margin-top:12px;width:8px;height:8px}h1{font-size:30px;letter-spacing:-1px}.hero-bottom{padding-left:19px;align-items:flex-start;flex-direction:column}.summary{font-size:12px}.workspace{display:block;min-height:0}.rule-nav{border-right:0;border-bottom:1px solid var(--line);padding:18px 12px}.nav-heading{margin-bottom:12px}.rule-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.rule-link{padding:11px 10px}.rule-name{font-size:12px}.rule-meta{flex-wrap:wrap;gap:5px}.nav-foot{display:none}.clause-panel{padding:24px 20px}.notice{padding:16px}.contract-detail{padding-left:0}.provenance dl{grid-template-columns:1fr;gap:3px}.provenance dd{margin-bottom:9px}footer{flex-direction:column;gap:8px}.comparison{font-size:10px}.finding-message{font-size:13px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-    @media print{body{background:#fff}.shell{width:100%}.masthead{padding-top:0}.copy-button,.rule-nav,.skip{display:none!important}.workspace{display:block;border:0}.clause-panel{display:block!important;padding:20px 0;break-inside:avoid}.hero{padding:22px 0}.provenance{display:block}.provenance dl{display:grid}.inputs ul{display:grid}footer{padding-bottom:0}}
+    @media(max-width:620px){.rule-diff-grid{grid-template-columns:1fr}.clause-top{align-items:flex-start;flex-wrap:wrap}.contract-line{--axis:48px;--offset:30px;--label-top:88px;--mark-height:110px;--mark-width:44px}.line-name{display:none}.line-point{padding-left:3px;padding-right:3px}}
+    @media print{body{background:#fff}.shell{width:100%}.masthead{padding-top:0}.copy-button,.rule-nav,.skip{display:none!important}.workspace{display:block;border:0}.clause-panel{display:block!important;padding:20px 0;break-inside:avoid}.hero{padding:22px 0}.provenance{display:block}.provenance dl{display:grid}.inputs ul{display:grid}.rule-diff-grid{display:grid}.definition pre{display:block}footer{padding-bottom:0}}
   </style>
 </head>
 <body>
@@ -158,9 +190,16 @@
         </div>
         {{if .GeneratedAt}}<p class="snapshot">Captured {{time .GeneratedAt}} · This report is a snapshot; rerun after changes.</p>{{end}}
       </section>
+      {{if .Checks}}<section class="contract-line{{if gt (len .Checks) 8}} compact{{end}}" aria-label="Contract line">
+        <div class="line-heading"><span class="section-label">The line</span><span>One mark per declared check · {{policy .Purpose}}{{if .Changes}} · Policy changed{{end}}</span></div>
+        <div class="line-track">{{range $i, $check := .Checks}}<a class="line-point {{state $check.Status}}" href="#check-{{$i}}" data-line-check="check-{{$i}}" data-required="{{$check.Required}}" aria-label="{{$check.ID}}: {{status $check.Status}}, {{if $check.Required}}required{{else}}advisory{{end}}"><span class="line-stem" aria-hidden="true"></span><span class="line-glyph" aria-hidden="true">{{if eq (state $check.Status) "unverified"}}?{{end}}</span><span class="line-number">{{ordinal $i}}</span><span class="line-name">{{$check.ID}}</span></a>{{end}}</div>
+        <div class="line-legend"><span>● Passed</span><span>◆ Above: required failure</span><span>◆ Below: advisory failure</span><span>○ Not verified</span><span>Positions indicate status, not severity or time.</span></div>
+      </section>{{end}}
       {{if .Changes}}<section class="notice" aria-labelledby="contract-title">
         <h2 class="notice-head" id="contract-title"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 5h12M4 10h8M4 15h12M15 8v5M12.5 10.5h5" stroke="currentColor" stroke-width="1.3"/></svg>The contract changed</h2>
         <ul class="contract-changes">{{range .Changes}}<li><span class="change-label">{{.Change}}</span><code>{{.Path}}</code>{{if .Detail}}<span class="contract-detail">{{.Detail}}</span>{{end}}</li>{{end}}</ul>
+        {{range .RuleChanges}}<details class="rule-diff" open><summary><span class="change-label">{{.Change}}</span> <code>{{.ID}}</code>{{if .PolicyFiles}} · policy inputs changed{{end}}</summary><div class="rule-diff-grid"><div><h3>Before · base</h3><pre>{{if .Before}}{{.Before}}{{else}}Rule absent{{end}}</pre></div><div><h3>After · candidate</h3><pre>{{if .After}}{{.After}}{{else}}Rule absent{{end}}</pre></div></div>{{range .PolicyFiles}}<p>Changed policy input: <code>{{.}}</code>. Review its file diff; the rule definition alone does not describe this change.</p>{{end}}</details>{{end}}
+        {{if .RuleChangeNote}}<p>{{.RuleChangeNote}}</p>{{else if and (eq .SchemaVersion 2) (not .RuleChanges)}}<p>No rule definition or declared policy input changed. Review contract metadata, formatting or comments.</p>{{end}}
         <p>Review changes to the rules separately from the results below.</p>
       </section>{{end}}
       {{if .Diagnostics}}<section class="global-diagnostics" aria-label="Report diagnostics">{{range .Diagnostics}}<p class="diagnostic">{{.}}</p>{{end}}</section>{{end}}
@@ -174,10 +213,11 @@
         </nav>
         <div class="details-area">{{range $i, $check := .Checks}}
           <section class="clause-panel" id="check-{{$i}}" aria-labelledby="title-{{$i}}">
-            <div class="clause-top"><span class="clause-kind">{{kind $check.Kind}}</span><span class="status {{state $check.Status}}">{{status $check.Status}}</span></div>
+            <div class="clause-top"><span class="clause-kind">{{kind $check.Kind}}</span><div class="clause-actions"><span class="status {{state $check.Status}}">{{status $check.Status}}</span><button class="copy-button" type="button" data-copy-check="{{$i}}"><span>Copy check</span></button></div></div>
             <h2 id="title-{{$i}}">{{$check.ID}}</h2>
             {{if $check.Reason}}<p class="reason">{{$check.Reason}}</p>{{end}}
             <div class="clause-properties"><span><strong>{{if $check.Required}}Required{{else}}Advisory{{end}}</strong></span><span>{{evidence $check.Evidence}}</span><span>{{$check.Files}} files reported</span><span>{{$check.DurationMS}} ms</span></div>
+            {{if $check.Specification}}<details class="definition" open><summary>Evaluated rule · {{policy $.Purpose}} · defaults included</summary><pre>{{$check.Specification}}</pre></details>{{else}}<p class="outcome">This saved report did not record the rule specification.</p>{{end}}
             <p class="outcome">{{outcome $check}}</p>
             {{range $check.Diagnostics}}<p class="diagnostic">{{.}}</p>{{end}}
             {{if $check.Findings}}<ol class="findings">{{range $check.Findings}}<li class="finding">
@@ -186,10 +226,10 @@
               <p class="finding-message">{{.Message}}</p>
               {{if .Remediation}}<div class="remediation"><p class="section-label">Next step</p><p>{{.Remediation}}</p></div>{{end}}
             </li>{{end}}</ol>{{else}}<div class="empty-findings"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor"/><path d="M10 6v.1M10 9v5" stroke="currentColor" stroke-width="1.5"/></svg><p>{{if eq $check.Status "passed"}}No findings reported by this check.{{else}}No findings available. See the check status and diagnostics.{{end}}</p></div>{{end}}
-            <details class="inputs"><summary>Declared inputs and scope</summary>{{if $check.Scope}}<ul>{{range $check.Scope}}<li><code>{{.}}</code></li>{{end}}</ul>{{else}}<p>No input scope was recorded.</p>{{end}}<p>The result applies to this check and its recorded inputs.</p></details>
+            <details class="inputs" open><summary>Declared inputs and scope</summary>{{if $check.Scope}}<ul>{{range $check.Scope}}<li><code>{{.}}</code></li>{{end}}</ul>{{else}}<p>No input scope was recorded.</p>{{end}}<p>The result applies to this check and its recorded inputs.</p></details>
           </section>{{else}}<div class="no-rules">{{if .Diagnostics}}<p>No check results are available.</p><p>Resolve the report diagnostics, then run the check again.</p>{{else}}<p>No checks were declared.</p><p>This report does not establish that the repository meets any project rules.</p>{{end}}</div>{{end}}</div>
       </div>
-      <details class="provenance"><summary>Report provenance</summary><dl>
+      <details class="provenance" open><summary>Report provenance</summary><dl>
         {{if eq .Purpose "preview"}}<dt>Purpose</dt><dd>Preview / not approved</dd><dt>Policy source</dt><dd>Candidate</dd>{{end}}
         <dt>Repository</dt><dd>{{.Repository}}</dd><dt>Base</dt><dd>{{.Base}}</dd><dt>Candidate</dt><dd>{{.Candidate}}</dd>
         <dt>Contract</dt><dd>{{.ContractPath}}</dd><dt>Contract hash</dt><dd>{{.ContractHash}}</dd><dt>Input digest</dt><dd>{{.InputDigest}}</dd>
@@ -200,12 +240,24 @@
   </div>
   <span class="sr-only" id="copy-status" role="status" aria-live="polite"></span>
   <pre class="sr-only" id="diagnostic-text" aria-hidden="true">{{.Transcript}}</pre>
+  {{range $i, $text := .CheckTranscripts}}<pre class="sr-only" id="diagnostic-check-{{$i}}" aria-hidden="true">{{$text}}</pre>{{end}}
   <script>
     (() => {
       'use strict';
       const links = Array.from(document.querySelectorAll('[data-check]'));
+      const marks = Array.from(document.querySelectorAll('[data-line-check]'));
       const panels = Array.from(document.querySelectorAll('.clause-panel'));
       const filters = Array.from(document.querySelectorAll('[data-filter]'));
+      document.querySelectorAll('details').forEach(detail => { detail.open = false; });
+      let printDetails = [];
+      window.addEventListener('beforeprint', () => {
+        printDetails = Array.from(document.querySelectorAll('details:not([open])'));
+        printDetails.forEach(detail => { detail.open = true; });
+      });
+      window.addEventListener('afterprint', () => {
+        printDetails.forEach(detail => { detail.open = false; });
+        printDetails = [];
+      });
       function filter(mode) {
         links.forEach(link => { link.parentElement.hidden = mode === 'attention' && link.dataset.state === 'passed'; });
         filters.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === mode)));
@@ -222,6 +274,10 @@
           if (link.dataset.check === id) link.setAttribute('aria-current', 'true');
           else link.removeAttribute('aria-current');
         });
+        marks.forEach(mark => {
+          if (mark.dataset.lineCheck === id) mark.setAttribute('aria-current', 'true');
+          else mark.removeAttribute('aria-current');
+        });
         if (updateHash) {
           try { history.replaceState(null, '', '#' + id); } catch (_) { /* Selection still works for local files. */ }
         }
@@ -236,14 +292,20 @@
           event.preventDefault();
           select(link.dataset.check, true);
         }));
+        marks.forEach(mark => mark.addEventListener('click', event => {
+          event.preventDefault();
+          select(mark.dataset.lineCheck, true);
+          document.getElementById(mark.dataset.lineCheck).scrollIntoView?.({block: 'start'});
+        }));
         window.addEventListener('hashchange', () => select(window.location.hash.slice(1)));
       }
       document.body.classList.add('enhanced');
-      const button = document.getElementById('copy-report');
       const live = document.getElementById('copy-status');
-      button.addEventListener('click', async () => {
+      document.querySelectorAll('#copy-report, [data-copy-check]').forEach(button => button.addEventListener('click', async () => {
         document.getElementById('copy-fallback')?.remove();
-        const text = document.getElementById('diagnostic-text').textContent;
+        const isCheck = button.hasAttribute('data-copy-check');
+        const label = isCheck ? 'Check diagnostic' : 'Report diagnostic';
+        const text = document.getElementById(isCheck ? 'diagnostic-check-' + button.dataset.copyCheck : 'diagnostic-text').textContent;
         let copied = false;
         try {
           if (navigator.clipboard && window.isSecureContext) {
@@ -257,7 +319,7 @@
           field.id = 'copy-fallback';
           field.value = text;
           field.readOnly = true;
-          field.setAttribute('aria-label', 'Report diagnostic');
+          field.setAttribute('aria-label', label);
           field.style.cssText = 'position:fixed;left:16px;bottom:16px;width:calc(100% - 32px);height:160px;z-index:20;background:#fff;color:#252825;padding:16px;border:2px solid #355c76;font:12px monospace';
           document.body.appendChild(field);
           field.focus();
@@ -274,8 +336,8 @@
         }
         live.textContent = 'Diagnostic copied.';
         button.querySelector('span').textContent = 'Copied';
-        window.setTimeout(() => { button.querySelector('span').textContent = 'Copy diagnostic'; }, 1800);
-      });
+        window.setTimeout(() => { button.querySelector('span').textContent = isCheck ? 'Copy check' : 'Copy diagnostic'; }, 1800);
+      }));
     })();
   </script>
 </body>

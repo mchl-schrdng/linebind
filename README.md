@@ -19,9 +19,21 @@
 
 <br>
 
+![The contract line: five rules aligned, a simulated native-code violation, then repair](docs/assets/contract-line.svg)
+
+Each mark represents a declared check. In the offline report, select a mark to
+open its rule and evidence. Required failures rise above the line, advisory
+failures sit below it, and hollow marks indicate incomplete verification.
+Positions indicate status, never severity or whole-repository coverage.
+
+<details>
+<summary>See an illustrated report</summary>
+
 ![An illustrated Linebind report showing a dependency outside the approved contract](docs/assets/report-desktop.png)
 
 <p align="center"><sub>A real example result, illustrated on a desktop. <a href="docs/assets/README.md">Artwork and evidence</a></sub></p>
+
+</details>
 
 ## Keep the reasoning with the rule.
 
@@ -40,7 +52,8 @@ method. The result keeps the evidence, the comparison and the limits together.
   existing and resolved issues. Changes to the contract itself stay visible.
 - **Understand the result.** Read a compact terminal diagnostic, consume JSON,
   or open a self-contained HTML report. A check that could not run has its own
-  status.
+  status. Inspect the evaluated rule, review definition changes before/after,
+  and copy one check with its evidence and analysis references.
 
 Native checks inspect files, text, dependency manifests and JSON/YAML documents.
 Opt-in commands connect specialist tools. The same contract workflow works
@@ -80,8 +93,8 @@ Selectors can traverse objects and arrays, including `*` for their children.
 These are focused assertions, not complete JSON Schema or OpenAPI validation.
 
 Python/Cargo dependency formats, `allowed-values`, `pattern` and the local
-`--base merge-base:REF` shorthand are available in source builds after v0.3.0.
-The currently published v0.3.0 binary does not support them. See the
+`--base merge-base:REF` shorthand require v0.4.0 or newer. Older binaries
+reject unsupported rules. See the
 [configuration reference](docs/configuration.md) for examples and exact limits.
 
 For **command rules**, `command.format` selects one of three result formats:

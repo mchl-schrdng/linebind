@@ -5,6 +5,34 @@
 without repeating the analysis. Open the resulting HTML file locally; it needs
 no server, account, external font or network resource.
 
+The contract line gives each check a stable position in declaration order.
+A filled point is passing, a raised diamond is a required failure, a lowered
+diamond is an advisory failure, and a hollow question mark is unverified.
+The displacement is categorical: it measures neither severity nor time.
+Selecting a mark opens the same clause as the check navigation, including checks
+hidden by the attention filter. Larger contracts use numbered marks; every
+mark keeps its accessible name and the full check list remains available.
+Contract changes are labelled separately and do not recolor the reference line.
+
+**Evaluated rule** shows normalized YAML from the policy actually used, with
+defaults included. It preserves operands such as `allow: []` and `equals: null`.
+This describes the declared verifier, not its entire implementation or tool
+version. Before sharing reports, review rule values and command arguments as
+well as diagnostics for sensitive data.
+
+When policy changes, the report compares rules by ID and shows their base and
+candidate definitions. Renaming an ID appears as removal and addition. Changed
+declared command policy files are attributed to the rules that reference them,
+even if their YAML is unchanged; review those files separately. Formatting and
+comments alone do not become rule changes. An invalid side makes rule comparison
+unavailable rather than implying no changes. These records describe edits,
+not inferred strengthening or weakening, and do not change CI outcomes.
+
+Starting with v0.4.0, new results use report schema **2**. This version can also render schema 1
+reports, with an explicit notice when a rule specification was not recorded.
+Older binaries reject schema 2 JSON; regenerate HTML with this version or share
+the standalone HTML. The contract configuration remains version 1.
+
 `linebind preview --base REF --html preview.html` produces an explicitly
 labelled **PREVIEW / NOT APPROVED** report using the candidate's proposed policy.
 Its JSON has `"purpose": "preview"`, and `linebind report` preserves that label
@@ -33,12 +61,20 @@ check to read its details. **Needs attention** filters the navigation to crossed
 and unverified checks, including advisory results. **All checks** restores the
 full list. Direct links such as `#check-1` take precedence and reveal their check
 even when it was filtered out. Without JavaScript, every check remains readable
-in the page. Printing also includes every check.
+in the page, with rule definitions and policy comparisons expanded. Printing
+includes every check and expands these details too; afterward, the interactive
+report restores the reader's open and closed sections.
 
 The copy action always copies the complete plain-text diagnostic, including
 checks hidden by the filter. If clipboard access is unavailable, it selects
 the text for manual copying.
 Press Escape to close that selection.
+
+**Copy check** copies only the selected check's definition, findings and
+diagnostics, with the report's comparison, hashes, capture time and policy source.
+It retains global policy warnings and identifies the header status as the
+overall report outcome. Preview excerpts remain explicitly unapproved. The
+same clipboard fallback and Escape behavior apply to individual checks.
 
 ## Interaction checks
 

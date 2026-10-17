@@ -23,18 +23,19 @@ type Contract struct {
 }
 
 type Rule struct {
-	ID           string            `yaml:"id" json:"id"`
-	Kind         string            `yaml:"kind" json:"kind"`
-	Reason       string            `yaml:"reason" json:"reason"`
-	Scope        []string          `yaml:"scope" json:"scope"`
-	Required     bool              `yaml:"required" json:"required"`
-	Compare      string            `yaml:"compare" json:"compare"`
-	Remediation  string            `yaml:"remediation,omitempty" json:"remediation,omitempty"`
-	Text         *TextRule         `yaml:"text,omitempty" json:"text,omitempty"`
-	Files        *FilesRule        `yaml:"files,omitempty" json:"files,omitempty"`
-	Dependencies *DependenciesRule `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
-	Document     *DocumentRule     `yaml:"document,omitempty" json:"document,omitempty"`
-	Command      *CommandRule      `yaml:"command,omitempty" json:"command,omitempty"`
+	Specification string            `yaml:"-" json:"-"`
+	ID            string            `yaml:"id" json:"id"`
+	Kind          string            `yaml:"kind" json:"kind"`
+	Reason        string            `yaml:"reason" json:"reason"`
+	Scope         []string          `yaml:"scope" json:"scope"`
+	Required      bool              `yaml:"required" json:"required"`
+	Compare       string            `yaml:"compare" json:"compare"`
+	Remediation   string            `yaml:"remediation,omitempty" json:"remediation,omitempty"`
+	Text          *TextRule         `yaml:"text,omitempty" json:"text,omitempty"`
+	Files         *FilesRule        `yaml:"files,omitempty" json:"files,omitempty"`
+	Dependencies  *DependenciesRule `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
+	Document      *DocumentRule     `yaml:"document,omitempty" json:"document,omitempty"`
+	Command       *CommandRule      `yaml:"command,omitempty" json:"command,omitempty"`
 }
 
 type TextRule struct {
@@ -141,6 +142,10 @@ func Load(data []byte) (*Contract, error) {
 		seen[r.ID] = true
 		if err := validateRule(r); err != nil {
 			return nil, fmt.Errorf("rule %q: %w", r.ID, err)
+		}
+		r.Specification, err = specification(*r)
+		if err != nil {
+			return nil, fmt.Errorf("rule %q specification: %w", r.ID, err)
 		}
 	}
 	return &c, nil

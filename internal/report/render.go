@@ -27,16 +27,19 @@ var page = template.Must(template.New("report").Funcs(template.FuncMap{
 	"kind":      func(s string) string { return strings.ReplaceAll(s, "_", " ") },
 	"short":     shortRef,
 	"time":      displayTime,
+	"policy":    policySource,
+	"ordinal":   func(i int) string { return fmt.Sprintf("%02d", i+1) },
 }).Parse(reportHTML))
 
 type pageData struct {
 	model.Report
-	Name       string
-	Title      string
-	Crossed    int
-	Unverified int
-	Attention  int
-	Transcript string
+	Name             string
+	Title            string
+	Crossed          int
+	Unverified       int
+	Attention        int
+	Transcript       string
+	CheckTranscripts []string
 }
 
 // Render writes a self-contained, read-only HTML report. Repository data is
@@ -90,6 +93,22 @@ func Render(w io.Writer, result model.Report) error {
 		return err
 	}
 	data.Transcript = transcript.String()
+	for _, check := range result.Checks {
+		excerpt := result
+		excerpt.Checks = []model.Check{check}
+		excerpt.RuleChanges = nil
+		for _, change := range result.RuleChanges {
+			if change.ID == check.ID {
+				excerpt.RuleChanges = append(excerpt.RuleChanges, change)
+			}
+		}
+		var text bytes.Buffer
+		text.WriteString("Single-check excerpt. The header status is the overall report outcome.\n")
+		if err := Text(&text, excerpt, true); err != nil {
+			return err
+		}
+		data.CheckTranscripts = append(data.CheckTranscripts, text.String())
+	}
 	var out bytes.Buffer
 	if err := page.Execute(&out, data); err != nil {
 		return err
@@ -111,12 +130,30 @@ func Text(w io.Writer, result model.Report, agent bool) error {
 	fmt.Fprintf(&out, "Repository: %s\nComparison: %s → %s\n", result.Repository, result.Base, result.Candidate)
 	if agent {
 		fmt.Fprintf(&out, "Contract: %s\nContract hash: %s\nInput digest: %s\n", result.ContractPath, result.ContractHash, result.InputDigest)
+		fmt.Fprintf(&out, "Captured: %s\nPolicy source: %s\n", result.GeneratedAt, policySource(result.Purpose))
 	}
 	for _, diagnostic := range result.Diagnostics {
 		fmt.Fprintf(&out, "Diagnostic: %s\n", diagnostic)
 	}
 	for _, change := range result.Changes {
 		fmt.Fprintf(&out, "Contract change [%s]: %s — %s\n", change.Change, change.Path, change.Detail)
+	}
+	if result.RuleChangeNote != "" {
+		fmt.Fprintln(&out, result.RuleChangeNote)
+	}
+	for _, change := range result.RuleChanges {
+		fmt.Fprintf(&out, "Rule change [%s]: %s\n", change.Change, change.ID)
+		if agent {
+			if change.Before != "" {
+				fmt.Fprintf(&out, "Before (base):\n%s", change.Before)
+			}
+			if change.After != "" {
+				fmt.Fprintf(&out, "After (candidate):\n%s", change.After)
+			}
+		}
+		for _, path := range change.PolicyFiles {
+			fmt.Fprintf(&out, "Changed policy input: %s\n", path)
+		}
 	}
 	for _, check := range result.Checks {
 		mode := "advisory"
@@ -129,6 +166,9 @@ func Text(w io.Writer, result model.Report, agent bool) error {
 		}
 		if len(check.Scope) > 0 {
 			fmt.Fprintf(&out, "Declared inputs: %s\n", strings.Join(check.Scope, ", "))
+		}
+		if agent && check.Specification != "" {
+			fmt.Fprintf(&out, "Evaluated rule (defaults included):\n%s", check.Specification)
 		}
 		for _, diagnostic := range check.Diagnostics {
 			fmt.Fprintf(&out, "Diagnostic: %s\n", diagnostic)
@@ -153,6 +193,13 @@ func Text(w io.Writer, result model.Report, agent bool) error {
 	fmt.Fprintln(&out, "\nResults apply only to the declared checks and recorded inputs.")
 	_, err := io.WriteString(w, removeControls(out.String()))
 	return err
+}
+
+func policySource(purpose string) string {
+	if purpose == "preview" {
+		return "candidate (preview / not approved)"
+	}
+	return "base"
 }
 
 // Control and bidirectional-formatting characters must not alter a diagnostic's
