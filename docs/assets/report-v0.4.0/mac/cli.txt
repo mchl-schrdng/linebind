@@ -1,0 +1,12 @@
+Linebind v0.4.0 — Crossed
+Repository: react-storefront
+Comparison: 132a20336b59b3a102782bfea5a6873565d0e50c → worktree:132a20336b59b3a102782bfea5a6873565d0e50c:8229618d0fef
+
+[Crossed] runtime-dependencies (required; Native check)
+Reason: Keep runtime packages deliberate and explain each new dependency.
+Declared inputs: package.json
+- [Not comparable] package.json → jquery
+  Direct dependency is not permitted: jquery
+  Next: Remove the accidental package or propose a contract change.
+
+Results apply only to the declared checks and recorded inputs.

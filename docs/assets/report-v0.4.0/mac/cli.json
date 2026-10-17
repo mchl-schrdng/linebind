@@ -1,0 +1,42 @@
+{
+  "schema_version": 2,
+  "version": "v0.4.0",
+  "repository": "react-storefront",
+  "base": "132a20336b59b3a102782bfea5a6873565d0e50c",
+  "candidate": "worktree:132a20336b59b3a102782bfea5a6873565d0e50c:8229618d0fef",
+  "input_digest": "8229618d0fef461a2bdb52ea3fa3c4ec68d40066f132f54a72cedb3b430ba50b",
+  "contract_path": ".linebind.yml",
+  "contract_hash": "4d496194e3d35f6aeca1787dd73cf5dfb10f142e575bce8dfc319c6fe6e360dd",
+  "generated_at": "2026-10-17T07:05:59Z",
+  "status": "crossed",
+  "exit_code": 1,
+  "contract_changes": [],
+  "checks": [
+    {
+      "id": "runtime-dependencies",
+      "kind": "dependencies",
+      "reason": "Keep runtime packages deliberate and explain each new dependency.",
+      "required": true,
+      "status": "crossed",
+      "evidence": "native",
+      "scope": [
+        "package.json"
+      ],
+      "specification": "id: runtime-dependencies\nkind: dependencies\nreason: Keep runtime packages deliberate and explain each new dependency.\nscope:\n    - package.json\nrequired: true\ncompare: strict\nremediation: Remove the accidental package or propose a contract change.\ndependencies:\n    format: npm\n    allow:\n        - react\n        - react-dom\n    sections:\n        - dependencies\n",
+      "files": 1,
+      "duration_ms": 0,
+      "findings": [
+        {
+          "fingerprint": "e3e4812b358347361ca7b4330dc3c69aaf1104650ca9b239124191ac152b608c",
+          "path": "package.json",
+          "target": "jquery",
+          "message": "Direct dependency is not permitted: jquery",
+          "remediation": "Remove the accidental package or propose a contract change.",
+          "evolution": "not_comparable"
+        }
+      ],
+      "diagnostics": []
+    }
+  ],
+  "diagnostics": []
+}
