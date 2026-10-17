@@ -9,33 +9,17 @@
 <p align="center">Declare the decisions your project relies on.<br>Check changes locally and in CI. Read the rule, result and evidence together.</p>
 
 <p align="center">
-  <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush">
-    <img src="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="CI — main branch">
-  </a>
-  <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/codeql.yml">
-    <img src="https://github.com/mchl-schrdng/linebind/actions/workflows/codeql.yml/badge.svg" alt="CodeQL analysis">
-  </a>
-  <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/contract.yml?query=event%3Apull_request">
-    <img src="https://github.com/mchl-schrdng/linebind/actions/workflows/contract.yml/badge.svg?event=pull_request" alt="Repository contract — latest pull request run">
-  </a>
-  <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/release.yml?query=event%3Apush">
-    <img src="https://github.com/mchl-schrdng/linebind/actions/workflows/release.yml/badge.svg?event=push" alt="Release — latest tag run">
-  </a>
+  <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush"><img src="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="CI — main branch"></a>
+  <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/codeql.yml"><img src="https://github.com/mchl-schrdng/linebind/actions/workflows/codeql.yml/badge.svg" alt="CodeQL analysis"></a>
+  <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/contract.yml?query=event%3Apull_request"><img src="https://github.com/mchl-schrdng/linebind/actions/workflows/contract.yml/badge.svg?event=pull_request" alt="Repository contract — latest pull request run"></a>
+  <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/release.yml?query=event%3Apush"><img src="https://github.com/mchl-schrdng/linebind/actions/workflows/release.yml/badge.svg?event=push" alt="Release — latest tag run"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/mchl-schrdng/linebind/releases/latest">
-    <img src="https://img.shields.io/github/v/release/mchl-schrdng/linebind?label=version&amp;logo=github&amp;color=5865F2" alt="Latest stable release">
-  </a>
-  <a href="go.mod">
-    <img src="https://img.shields.io/github/go-mod/go-version/mchl-schrdng/linebind?label=Go%20source&amp;logo=go&amp;logoColor=white&amp;color=5865F2" alt="Minimum Go version for building from source">
-  </a>
-  <a href="LICENSE">
-    <img src="https://img.shields.io/github/license/mchl-schrdng/linebind?color=5865F2" alt="License">
-  </a>
-  <a href="docs/installation.md">
-    <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-5865F2" alt="Release binaries for macOS, Linux and Windows">
-  </a>
+  <a href="https://github.com/mchl-schrdng/linebind/releases/latest"><img src="https://img.shields.io/github/v/release/mchl-schrdng/linebind?label=version&amp;logo=github&amp;color=5865F2" alt="Latest stable release"></a>
+  <a href="go.mod"><img src="https://img.shields.io/github/go-mod/go-version/mchl-schrdng/linebind?label=Go%20source&amp;logo=go&amp;logoColor=white&amp;color=5865F2" alt="Minimum Go version for building from source"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/mchl-schrdng/linebind?color=5865F2" alt="License"></a>
+  <a href="docs/installation.md"><img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-5865F2" alt="Release binaries for macOS, Linux and Windows"></a>
 </p>
 
 <p align="center">
