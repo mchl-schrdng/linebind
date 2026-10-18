@@ -47,7 +47,7 @@ Create and review a `.linebind.yml` with explicit project decisions; see
 
 The pinned reusable job runs on a GitHub-hosted runner. It checks out the
 comparison base, fetches the candidate as Git objects, and runs the
-checksum-verified v0.4.0 release. Reports include the evaluated rule definitions
+checksum-verified v0.4.1 release. Reports include the evaluated rule definitions
 and added, removed or modified rules, so the hosted review shows the same
 evidence as the CLI. It does not execute candidate code, install
 project dependencies, or enable command checks. Do not add untrusted steps
@@ -65,9 +65,8 @@ Policy changes can pass the proposed view while the adopted view still records
 the old-policy findings. A preview does not approve a contract change.
 
 The pilot supports native checks only. A required command check remains
-unverified. Merge queues, pending-state invalidation, concurrent publication
-and sustained outage recovery need further work before this can be a required
-merge gate. Reports retain captured evidence; they do not continuously update.
+unverified. Merge queues, pending-state invalidation and a timely recovery
+schedule need further work before this can be a required merge gate. Reports retain captured evidence; they do not continuously update.
 
 ## Exercise the integration
 
