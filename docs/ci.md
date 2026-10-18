@@ -10,7 +10,7 @@ copyable GitHub Actions integration. It validates the PR's code under the
 a contract edit alone does not fail CI. Merging adopts the reviewed proposal.
 
 It downloads the published Linux amd64 binary from
-[v0.3.0](https://github.com/mchl-schrdng/linebind/releases/tag/v0.3.0), verifies its
+[v0.4.1](https://github.com/mchl-schrdng/linebind/releases/tag/v0.4.1), verifies its
 pinned SHA-256 and uses explicit PR base/head SHAs. The verifier is a previously
 published release, not built from the PR. Updating it requires reviewing both
 the version and checksum.
@@ -28,10 +28,13 @@ replace the download/checksum/extract step with:
 
 ```yaml
 - name: Install the published verifier
-  uses: mchl-schrdng/linebind@b1f1860e8d060c8c4f90c0f67bff367b5bf1e618 # setup Action
+  uses: mchl-schrdng/linebind@7a721b149c7f37a9458b876d8280a7bbad2db766 # reviewed Action source
+  with:
+    version: v0.4.1
+    sha256: ab9fddad704f6d28ee8d42315784166673336c8b780263bf9e4ff8b8cdd5827a
 ```
 
-The Action installs v0.3.0 by default, verifies the archive against its pinned
+The example installs v0.4.1, verifies the archive against its pinned
 SHA-256 before extracting or executing it, and adds `linebind` to `PATH`.
 It also exposes an absolute `binary` output. It does not build the candidate,
 install project dependencies, choose a base, change the checkout or execute
@@ -40,16 +43,19 @@ and required-check settings from the full workflow above. For another published
 release, supply both `version: vX.Y.Z` and its independently reviewed `sha256`.
 A wrong checksum fails closed; there is no automatic `latest` update.
 
-The example pins the commit introducing `action.yml`; neither v0.3.0 nor an
-`@v1` Action tag contains this new integration. Pin the Action
-source independently of the CLI release it installs. Python/Cargo formats and
-the new document predicates require CLI v0.4.0 or newer; the setup Action's
-default v0.3.0 verifier will reject those unsupported rules.
+Pin the Action source independently of the CLI release it installs. The
+examples supply both inputs because that immutable Action revision predates
+the default-version update. The Action on `main` and this repository's contract
+gate now default to v0.4.1; older pinned Action revisions retain their defaults.
+Python/Cargo formats and the new document predicates require CLI v0.4.0 or newer.
 
 For example, after the existing base checkout and candidate-fetch steps:
 
 ```yaml
-- uses: mchl-schrdng/linebind@b1f1860e8d060c8c4f90c0f67bff367b5bf1e618 # setup Action
+- uses: mchl-schrdng/linebind@7a721b149c7f37a9458b876d8280a7bbad2db766 # reviewed Action source
+  with:
+    version: v0.4.1
+    sha256: ab9fddad704f6d28ee8d42315784166673336c8b780263bf9e4ff8b8cdd5827a
 - name: Validate the proposal
   env:
     BASE_SHA: ${{ github.event.pull_request.base.sha }}
