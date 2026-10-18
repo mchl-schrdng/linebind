@@ -47,7 +47,9 @@ Create and review a `.linebind.yml` with explicit project decisions; see
 
 The pinned reusable job runs on a GitHub-hosted runner. It checks out the
 comparison base, fetches the candidate as Git objects, and runs the
-checksum-verified v0.3.0 release. It does not execute candidate code, install
+checksum-verified v0.4.0 release. Reports include the evaluated rule definitions
+and added, removed or modified rules, so the hosted review shows the same
+evidence as the CLI. It does not execute candidate code, install
 project dependencies, or enable command checks. Do not add untrusted steps
 to this privileged `pull_request_target` job.
 

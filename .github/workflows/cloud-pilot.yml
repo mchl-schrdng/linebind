@@ -38,9 +38,9 @@ jobs:
         run: |
           mkdir -p linebind-bin linebind-reports
           curl --fail --silent --show-error --location --retry 3 \
-            https://github.com/mchl-schrdng/linebind/releases/download/v0.3.0/linebind_0.3.0_linux_amd64.tar.gz \
+            https://github.com/mchl-schrdng/linebind/releases/download/v0.4.0/linebind_0.4.0_linux_amd64.tar.gz \
             --output linebind.tar.gz
-          printf '609fc209c10803d5613f2afc4c1f903145143a4f388276f3727dbc0261401b07  linebind.tar.gz\n' | sha256sum --check --strict
+          printf '986013f4101137865aecaf042ea47cb6ab47507035e8475ed0a6a51549b7c2a7  linebind.tar.gz\n' | sha256sum --check --strict
           tar -xzf linebind.tar.gz -C linebind-bin linebind
       - name: Capture both policy comparisons
         working-directory: ${{ runner.temp }}
