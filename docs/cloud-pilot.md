@@ -1,14 +1,26 @@
 # Connect a repository to Linebind Cloud
 
-Linebind Cloud is a free beta at <https://linebind-cloud.vercel.app>.
+Linebind Cloud is the hosted companion at <https://linebind-cloud.vercel.app>.
 Its GitHub check links to authenticated adopted and proposed contract evidence.
 The check is informational: do not make it a required merge gate.
 
-## Install the GitHub App
+The CLI stays free. The prepared Cloud plan is EUR 9/month per GitHub account or
+organization, for all connected public and private repositories. Live sales are
+not open yet; the deployed environment is limited to internal testing.
+
+## Install the GitHub App and activate Cloud
 
 Install [Linebind Cloud](https://github.com/apps/linebind-cloud/installations/new)
 on the selected repositories. An organization may require its owner's approval.
-There is no Linebind invitation or manual account enrolment.
+For paid self-service, sign in to [billing](https://linebind-cloud.vercel.app/billing)
+as the personal account owner or an organization owner, select that account, then
+subscribe through Stripe Checkout. Installing the App alone does not activate Cloud.
+Organization billing requires the App's read access to organization membership.
+
+The billing page also opens Stripe's portal for invoices, card updates and
+cancellation. Cancel at any time; access continues until the paid period ends.
+Uninstalling the App does not cancel the subscription. The personal owner or the
+organization's saved billing contact can still reach billing after uninstalling.
 
 The workflow is public so both private and public repositories can call it.
 No Cloud, database, Stripe or GitHub App secrets are needed in your repository.
@@ -49,6 +61,8 @@ enabled, and that both files are on the default branch. Organization policies
 may require an administrator to allow the reusable workflow. Inspect the Linebind
 run in Actions and rerun a failed job after fixing its cause. If the captured
 revisions have changed, push a new commit or reopen the pull request for fresh evidence.
+An HTTP 402 means the account needs an active subscription; activate it from the
+billing page, then rerun the workflow.
 
 ## Trust and results
 
