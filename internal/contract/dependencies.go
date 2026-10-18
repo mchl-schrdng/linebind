@@ -92,8 +92,11 @@ func npmDependencies(data []byte, sections []string) ([]string, []string, error)
 			lowerSpec := strings.ToLower(spec)
 			if strings.HasPrefix(spec, "npm:") {
 				alias := strings.TrimPrefix(spec, "npm:")
-				if at := strings.LastIndex(alias, "@"); at > 0 {
-					alias = alias[:at]
+				if len(alias) > 1 {
+					// Skip a scoped name's leading @; the version range may also contain @.
+					if at := strings.Index(alias[1:], "@"); at >= 0 {
+						alias = alias[:at+1]
+					}
 				}
 				if alias == "" || strings.ContainsAny(alias, " :\t\r\n") || (strings.HasPrefix(alias, "@") && !strings.Contains(alias, "/")) {
 					return nil, nil, fmt.Errorf("invalid npm alias for %s", name)
