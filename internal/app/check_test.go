@@ -273,3 +273,29 @@ rules:
 		}
 	}
 }
+
+func TestMissingApprovedPolicyRetainsChangesRegardlessOfPathOrder(t *testing.T) {
+	for _, policyPath := range []string{"a/rules.rego", "policy/rules.rego"} {
+		for _, changed := range []bool{false, true} {
+			t.Run(policyPath+map[bool]string{false: "/unchanged", true: "/changed"}[changed], func(t *testing.T) {
+				dir := t.TempDir()
+				testGit(t, dir, "init", "-q")
+				policy := previewCommandContract(t, "policy", "exit", "strict", policyPath)
+				put(t, dir, "contracts/linebind.yml", policy)
+				put(t, dir, "src/code.txt", "allowed\n")
+				testGit(t, dir, "add", ".")
+				testGit(t, dir, "commit", "-qm", "base with unavailable policy")
+				opt := Options{Repo: dir, Base: testGit(t, dir, "rev-parse", "HEAD"), Head: "worktree", Contract: "contracts/linebind.yml", Version: "test"}
+				wantExit, wantChanges := 2, 0
+				if changed {
+					put(t, dir, opt.Contract, strings.Replace(policy, "Verify the selected policy source.", "A proposed policy reason.", 1))
+					wantExit, wantChanges = 1, 1
+				}
+				got := Check(opt)
+				if got.ExitCode != wantExit || len(got.Changes) != wantChanges || len(got.Checks) != 0 || !strings.Contains(strings.Join(got.Diagnostics, " "), "approved policy file "+policyPath+" is unavailable") {
+					t.Fatalf("missing policy changed the review evidence by path order: %+v", got)
+				}
+			})
+		}
+	}
+}

@@ -266,10 +266,23 @@ func TestNPMDependenciesAndAliases(t *testing.T) {
 }
 
 func TestInvalidAndNonRegistryDependenciesUnverified(t *testing.T) {
-	for _, input := range []string{`{`, `[]`, `null`, `{"dependencies":null}`, `{"dependencies":{"x":false}}`, `{"dependencies":{},"dependencies":{"axios":"1"}}`, `{"dependencies":{"safe":"https://example.com/unverified.tgz"}}`} {
+	for _, input := range []string{`{`, `[]`, `null`, `{"dependencies":null}`, `{"dependencies":{"x":false}}`, `{"dependencies":{},"dependencies":{"axios":"1"}}`, `{"dependencies":{"safe":"https://example.com/unverified.tgz"}}`, `{"dependencies":{"safe":"npm:"}}`} {
 		got := oneCheck(t, dependenciesContract, map[string][]byte{"package.json": []byte(input)})
 		if got.Status != "unverified" {
 			t.Fatalf("%s: %+v", input, got)
+		}
+	}
+}
+
+func TestNPMAliasIdentityEndsBeforeVersionRange(t *testing.T) {
+	for _, target := range []string{"axios", "@scope/blocked"} {
+		config := strings.Replace(dependenciesContract, "deny: [axios]", "deny: ["+strconv.Quote(target)+"]", 1)
+		for _, version := range []string{"", "@^1.0.0", "@>=1.0.0||@1.0.0"} {
+			input := `{"dependencies":{"safe":` + strconv.Quote("npm:"+target+version) + `}}`
+			got := oneCheck(t, config, map[string][]byte{"package.json": []byte(input)})
+			if got.Status != "crossed" || len(got.Findings) != 1 || got.Findings[0].Target != target {
+				t.Fatalf("alias %s%s hid its target: %+v", target, version, got)
+			}
 		}
 	}
 }

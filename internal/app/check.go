@@ -132,10 +132,11 @@ func evaluate(opt Options, purpose string) model.Report {
 		names = append(names, name)
 	}
 	sort.Strings(names)
+	var missingPolicy string
 	for _, name := range names {
 		approved, approvedExists := base.Files[name]
-		if purpose != "preview" && !approvedExists {
-			return fail(fmt.Errorf("approved policy file %s is unavailable", name))
+		if purpose != "preview" && !approvedExists && missingPolicy == "" {
+			missingPolicy = name
 		}
 		proposed, proposedExists := candidate.Files[name]
 		change, detail := "", ""
@@ -155,6 +156,9 @@ func evaluate(opt Options, purpose string) model.Report {
 			}
 			r.Changes = append(r.Changes, model.ContractChange{Path: name, Change: change, Detail: detail})
 		}
+	}
+	if missingPolicy != "" {
+		return fail(fmt.Errorf("approved policy file %s is unavailable", missingPolicy))
 	}
 	r.Checks = contract.Evaluate(c, candidate.Files)
 	previous := contract.Evaluate(c, base.Files)
