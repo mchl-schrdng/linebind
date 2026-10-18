@@ -7,31 +7,31 @@ external command requires its own tools and explicit `--allow-exec` permission.
 Download the archive matching your computer, plus `SHA256SUMS`, from the
 [GitHub release](https://github.com/mchl-schrdng/linebind/releases).
 
-| Platform | Architecture | v0.4.0 archive |
+| Platform | Architecture | v0.4.1 archive |
 | --- | --- | --- |
-| macOS | Apple silicon | `linebind_0.4.0_darwin_arm64.tar.gz` |
-| macOS | Intel | `linebind_0.4.0_darwin_amd64.tar.gz` |
-| Linux | x86-64 | `linebind_0.4.0_linux_amd64.tar.gz` |
-| Linux | ARM64 | `linebind_0.4.0_linux_arm64.tar.gz` |
-| Windows | x86-64 | `linebind_0.4.0_windows_amd64.zip` |
-| Windows | ARM64 | `linebind_0.4.0_windows_arm64.zip` |
+| macOS | Apple silicon | `linebind_0.4.1_darwin_arm64.tar.gz` |
+| macOS | Intel | `linebind_0.4.1_darwin_amd64.tar.gz` |
+| Linux | x86-64 | `linebind_0.4.1_linux_amd64.tar.gz` |
+| Linux | ARM64 | `linebind_0.4.1_linux_arm64.tar.gz` |
+| Windows | x86-64 | `linebind_0.4.1_windows_amd64.zip` |
+| Windows | ARM64 | `linebind_0.4.1_windows_arm64.zip` |
 
 On macOS, calculate the downloaded archive's digest with:
 
 ```sh
-shasum -a 256 linebind_0.4.0_darwin_arm64.tar.gz
+shasum -a 256 linebind_0.4.1_darwin_arm64.tar.gz
 ```
 
 On Linux use `sha256sum ARCHIVE`; on Windows use
 `Get-FileHash ARCHIVE -Algorithm SHA256` in PowerShell. Compare the result with
 the matching filename in `SHA256SUMS` before extracting. Checksums detect an
-altered download; v0.4.0 archives are not signed or notarized.
+altered download; v0.4.1 archives are not signed or notarized.
 
 Extract the archive, then move the executable into a directory on your `PATH`,
 or run it by its full path. For example, on an Apple silicon Mac:
 
 ```sh
-tar -xzf linebind_0.4.0_darwin_arm64.tar.gz
+tar -xzf linebind_0.4.1_darwin_arm64.tar.gz
 ./linebind --version
 ```
 
@@ -47,7 +47,7 @@ repository's review process adopts the contract; preview does not approve it.
 ## GitHub Actions
 
 The repository includes a [setup Action](../action.yml) for Linux x64 runners.
-It installs the pinned v0.3.0 release, verifies its SHA-256 and adds it to `PATH`.
+It installs the pinned v0.4.1 release, verifies its SHA-256 and adds it to `PATH`.
 See the [CI guide](ci.md#install-with-the-setup-action) for commit pinning,
 base/head selection and report retention. No Homebrew tap is published.
 
