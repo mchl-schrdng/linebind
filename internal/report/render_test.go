@@ -2,6 +2,7 @@ package report
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"regexp"
 	"strings"
@@ -265,5 +266,26 @@ func TestContractReviewTitleDoesNotInventOrHideViolations(t *testing.T) {
 				t.Fatalf("HTML does not distinguish policy review from verification: want %q", test.title)
 			}
 		})
+	}
+}
+
+func TestReportEmbedsFontAndLicenseOffline(t *testing.T) {
+	var out bytes.Buffer
+	if err := Render(&out, sampleReport()); err != nil {
+		t.Fatal(err)
+	}
+	html := out.String()
+	match := regexp.MustCompile(`data:font/woff2;base64,([A-Za-z0-9+/=]+)`).FindStringSubmatch(html)
+	if len(match) != 2 {
+		t.Fatal("embedded font URL missing or escaped incorrectly")
+	}
+	font, err := base64.StdEncoding.DecodeString(match[1])
+	if err != nil || !bytes.Equal(font, displayFont) {
+		t.Fatal("embedded font differs from bundled asset")
+	}
+	for _, value := range []string{"font-src data:", "SIL OPEN FONT LICENSE", "font-license"} {
+		if !strings.Contains(html, value) {
+			t.Errorf("missing %s", value)
+		}
 	}
 }
