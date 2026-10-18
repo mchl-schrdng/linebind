@@ -4,6 +4,7 @@ package report
 import (
 	"bytes"
 	_ "embed"
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"io"
@@ -18,17 +19,28 @@ import (
 //go:embed report.html
 var reportHTML string
 
+//go:embed fonts/barlow-condensed-latin-800.woff2
+var displayFont []byte
+
+//go:embed fonts/OFL.txt
+var fontLicense string
+
+// The URL contains only our bundled font, never repository-controlled data.
+var displayFontURL = template.URL("data:font/woff2;base64," + base64.StdEncoding.EncodeToString(displayFont))
+
 var page = template.Must(template.New("report").Funcs(template.FuncMap{
-	"status":    statusLabel,
-	"state":     state,
-	"evolution": evolutionLabel,
-	"evidence":  evidenceLabel,
-	"outcome":   checkOutcome,
-	"kind":      func(s string) string { return strings.ReplaceAll(s, "_", " ") },
-	"short":     shortRef,
-	"time":      displayTime,
-	"policy":    policySource,
-	"ordinal":   func(i int) string { return fmt.Sprintf("%02d", i+1) },
+	"font":        func() template.URL { return displayFontURL },
+	"fontLicense": func() string { return fontLicense },
+	"status":      statusLabel,
+	"state":       state,
+	"evolution":   evolutionLabel,
+	"evidence":    evidenceLabel,
+	"outcome":     checkOutcome,
+	"kind":        func(s string) string { return strings.ReplaceAll(s, "_", " ") },
+	"short":       shortRef,
+	"time":        displayTime,
+	"policy":      policySource,
+	"ordinal":     func(i int) string { return fmt.Sprintf("%02d", i+1) },
 }).Parse(reportHTML))
 
 type pageData struct {

@@ -3,7 +3,8 @@
 `linebind check --base REF --html report.html` writes the result of that run.
 `linebind report result.json --output report.html` renders a saved JSON result
 without repeating the analysis. Open the resulting HTML file locally; it needs
-no server, account, external font or network resource.
+no server, account or network resource. The display font and its SIL Open Font
+License are embedded in the HTML; repository content still uses a system font.
 
 The contract line gives each check a stable position in declaration order.
 A filled point is passing, a raised diamond is a required failure, a lowered
