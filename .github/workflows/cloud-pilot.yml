@@ -1,0 +1,90 @@
+name: Trusted Linebind analysis
+on:
+  workflow_call:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  analyze:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      REPOSITORY: ${{ github.repository }}
+      REPOSITORY_ID: ${{ github.repository_id }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      # Fixed destination: caller-controlled URLs must never receive the OIDC token.
+      LINEBIND_CLOUD_URL: https://linebind-cloud.vercel.app
+    steps:
+      - name: Check out the trusted base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Capture candidate Git objects without executing candidate code
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ && "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 --wrap=0)
+          printf '::add-mask::%s\n' "$auth"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" fetch --no-tags --depth=1 origin "$HEAD_SHA"
+          test "$(git rev-parse --verify FETCH_HEAD)" = "$HEAD_SHA"
+      - name: Install the released verifier
+        working-directory: ${{ runner.temp }}
+        run: |
+          mkdir -p linebind-bin linebind-reports
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/mchl-schrdng/linebind/releases/download/v0.3.0/linebind_0.3.0_linux_amd64.tar.gz \
+            --output linebind.tar.gz
+          printf '609fc209c10803d5613f2afc4c1f903145143a4f388276f3727dbc0261401b07  linebind.tar.gz\n' | sha256sum --check --strict
+          tar -xzf linebind.tar.gz -C linebind-bin linebind
+      - name: Capture both policy comparisons
+        working-directory: ${{ runner.temp }}
+        run: |
+          for mode in check preview; do
+            status=0
+            ./linebind-bin/linebind "$mode" --repo "$GITHUB_WORKSPACE" --base "$BASE_SHA" --head "$HEAD_SHA" \
+              --format json --output "linebind-reports/$mode.json" || status=$?
+            case "$status" in 0|1|2) ;; *) exit "$status" ;; esac
+          done
+      - name: Submit authenticated evidence
+        working-directory: ${{ runner.temp }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, time, urllib.request, urllib.error
+          origin = os.environ['LINEBIND_CLOUD_URL']
+          request = urllib.request.Request(
+              os.environ['ACTIONS_ID_TOKEN_REQUEST_URL'] + '&audience=' + urllib.parse.quote(origin, safe=''),
+              headers={'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})
+          with urllib.request.urlopen(request, timeout=20) as response:
+              token = json.load(response)['value']
+          print('::add-mask::' + token)
+          envelope = {
+              'protocol_version': 1,
+              'repository': os.environ['REPOSITORY'],
+              'repository_id': int(os.environ['REPOSITORY_ID']),
+              'pr_number': int(os.environ['PR_NUMBER']),
+              'run_id': os.environ['GITHUB_RUN_ID'],
+              'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+              'adopted': json.loads(pathlib.Path('linebind-reports/check.json').read_text()),
+              'proposed': json.loads(pathlib.Path('linebind-reports/preview.json').read_text()),
+          }
+          data = json.dumps(envelope).encode()
+          for attempt in range(3):
+              try:
+                  request = urllib.request.Request(origin + '/api/reports', data=data,
+                      headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}, method='POST')
+                  with urllib.request.urlopen(request, timeout=60) as response:
+                      result = json.load(response)
+                  with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+                      summary.write('[Open the Linebind report](' + result['url'] + ')\n')
+                  break
+              except urllib.error.HTTPError as error:
+                  if error.code < 500 or attempt == 2:
+                      raise RuntimeError('Report submission failed with HTTP ' + str(error.code)) from None
+                  time.sleep(2 ** attempt)
+          PY

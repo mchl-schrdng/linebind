@@ -1,5 +1,9 @@
 # Use Linebind as a PR gate
 
+For the optional hosted report integration, see the
+[Cloud pilot setup](cloud-pilot.md). Its informational GitHub App check is a
+separate integration from the required CLI gate described here.
+
 [The repository's workflow](../.github/workflows/contract.yml) is a complete,
 copyable GitHub Actions integration. It validates the PR's code under the
 **candidate contract** using `preview`. Rules may evolve in the same PR as code:
