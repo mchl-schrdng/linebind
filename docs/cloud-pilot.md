@@ -1,47 +1,54 @@
-# Connect a repository to the Cloud pilot
+# Connect a repository to Linebind Cloud
 
-Linebind Cloud is an invite-only, free pilot at
-<https://linebind-cloud.vercel.app>. Its GitHub check links to authenticated
-adopted and proposed contract evidence. The check is informational: do not make
-it a required merge gate during the pilot.
+Linebind Cloud is a free beta at <https://linebind-cloud.vercel.app>.
+Its GitHub check links to authenticated adopted and proposed contract evidence.
+The check is informational: do not make it a required merge gate.
 
-## Enrol the repository
+## Install the GitHub App
 
-The maintainer must enrol the repository owner's immutable GitHub account ID
-and allowlist the exact reusable-workflow commit in Cloud. Install the
-`linebind-cloud` GitHub App on the selected repository. A public workflow does
-not enrol an account or give the App access to a repository by itself.
+Install [Linebind Cloud](https://github.com/apps/linebind-cloud/installations/new)
+on the selected repositories. An organization may require its owner's approval.
+There is no Linebind invitation or manual account enrolment.
 
-The workflow is distributed here so private and public repositories can call
-it without access to the private Cloud application repository. It needs no
-Cloud, database, Stripe or GitHub App secrets in the caller repository.
+The workflow is public so both private and public repositories can call it.
+No Cloud, database, Stripe or GitHub App secrets are needed in your repository.
 
-## Add the caller on the default branch
+## Add the contract and workflow
 
-The maintainer supplies a reviewed, full 40-character commit SHA containing
-`.github/workflows/cloud-pilot.yml`. Replace `REVIEWED_WORKFLOW_SHA` below with
-that enrolled SHA; do not replace it with a branch or mutable tag.
+If the repository does not yet have a contract, run `linebind init`, edit
+`.linebind.yml` to reflect explicit project decisions, then run `linebind validate`.
+Review and commit it to the default branch. See
+[configuration](configuration.md) and [contract adoption](ci.md#bootstrap-and-policy-changes).
+
+Save this exact caller as `.github/workflows/linebind.yml` on the default branch:
 
 ```yaml
-name: Linebind Cloud pilot
+name: Linebind
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, edited]
-    branches: [main]
 permissions:
   contents: read
   id-token: write
 jobs:
   analyze:
-    if: vars.LINEBIND_CLOUD_ENABLED == 'true'
-    uses: mchl-schrdng/linebind/.github/workflows/cloud-pilot.yml@REVIEWED_WORKFLOW_SHA
+    uses: mchl-schrdng/linebind/.github/workflows/cloud-pilot.yml@ffd0115a9cd7b6b40d69f3bd397efc39f7005663
 ```
 
-Commit the caller to the default branch before opening a test PR. Adapt `main`
-if the repository uses a different default branch. Enable the repository
-variable `LINEBIND_CLOUD_ENABLED=true` after enrolment and App installation.
-Create and review a `.linebind.yml` with explicit project decisions; see
-[configuration](configuration.md) and [contract adoption](ci.md#bootstrap-and-policy-changes).
+This reviewed workflow is pinned to a full commit SHA. Do not substitute a branch
+or mutable tag, add untrusted steps, or pass repository secrets. No activation
+variable is needed for this caller. Existing callers that use
+`LINEBIND_CLOUD_ENABLED` can keep it set to `true` or adopt the caller above.
+
+After both setup files are on the default branch, open a pull request or push a
+new commit to an existing one. **Linebind / Analysis** links to its report.
+Sign in with GitHub to read it or open your [workspace](https://linebind-cloud.vercel.app/dashboard).
+
+If no report appears, check the App's repository selection, that Actions is
+enabled, and that both files are on the default branch. Organization policies
+may require an administrator to allow the reusable workflow. Inspect the Linebind
+run in Actions and rerun a failed job after fixing its cause. If the captured
+revisions have changed, push a new commit or reopen the pull request for fresh evidence.
 
 ## Trust and results
 
@@ -64,7 +71,7 @@ violation or incomplete required verification produces a failed analysis.
 Policy changes can pass the proposed view while the adopted view still records
 the old-policy findings. A preview does not approve a contract change.
 
-The pilot supports native checks only. A required command check remains
+Cloud supports native checks only. A required command check remains
 unverified. Merge queues, pending-state invalidation and a timely recovery
 schedule need further work before this can be a required merge gate. Reports retain captured evidence; they do not continuously update.
 
