@@ -4,23 +4,19 @@ Linebind Cloud is the hosted companion at <https://linebind-cloud.vercel.app>.
 Its GitHub check links to authenticated adopted and proposed contract evidence.
 The check is informational: do not make it a required merge gate.
 
-The CLI stays free. The prepared Cloud plan is EUR 9/month per GitHub account or
-organization, for all connected public and private repositories. Live sales are
-not open yet; the deployed environment is limited to internal testing.
+The CLI is free and open source. Cloud is also free during its opening phase,
+for connected public and private repositories. No card or subscription is needed,
+and there is no automatic conversion to a paid plan.
 
-## Install the GitHub App and activate Cloud
+## Connect GitHub
 
 Install [Linebind Cloud](https://github.com/apps/linebind-cloud/installations/new)
 on the selected repositories. An organization may require its owner's approval.
-For paid self-service, sign in to [billing](https://linebind-cloud.vercel.app/billing)
-as the personal account owner or an organization owner, select that account, then
-subscribe through Stripe Checkout. Installing the App alone does not activate Cloud.
-Organization billing requires the App's read access to organization membership.
-
-The billing page also opens Stripe's portal for invoices, card updates and
-cancellation. Cancel at any time; access continues until the paid period ends.
-Uninstalling the App does not cancel the subscription. The personal owner or the
-organization's saved billing contact can still reach billing after uninstalling.
+GitHub returns you to your [workspace](https://linebind-cloud.vercel.app/dashboard).
+Sign in with GitHub; no separate account or payment step is needed.
+The App reads contents, pull requests and Actions metadata, and writes checks.
+It cannot push code or change repository settings. Your own repository permissions
+are checked whenever you open a private report.
 
 The workflow is public so both private and public repositories can call it.
 No Cloud, database, Stripe or GitHub App secrets are needed in your repository.
@@ -60,9 +56,8 @@ If no report appears, check the App's repository selection, that Actions is
 enabled, and that both files are on the default branch. Organization policies
 may require an administrator to allow the reusable workflow. Inspect the Linebind
 run in Actions and rerun a failed job after fixing its cause. If the captured
-revisions have changed, push a new commit or reopen the pull request for fresh evidence.
-An HTTP 402 means the account needs an active subscription; activate it from the
-billing page, then rerun the workflow.
+revisions have changed, push a new commit for fresh evidence. Reopening an old
+pull request may retain the old comparison base in GitHub's event.
 
 ## Trust and results
 
@@ -88,6 +83,11 @@ the old-policy findings. A preview does not approve a contract change.
 Cloud supports native checks only. A required command check remains
 unverified. Merge queues, pending-state invalidation and a timely recovery
 schedule need further work before this can be a required merge gate. Reports retain captured evidence; they do not continuously update.
+
+Uninstalling the App revokes access to its reports. A new installation starts a
+new report history; it does not reconnect links to the former installation.
+See the [privacy page](https://linebind-cloud.vercel.app/privacy) for stored data
+and retention details.
 
 ## Exercise the integration
 
