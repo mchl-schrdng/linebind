@@ -98,8 +98,8 @@ specialist verifier when syntax or module resolution matters.
 
 ### Declared dependency names
 
-Use the complete example above. `dependencies.format` is `npm` or `go` in v0.3.0;
-source builds after v0.3.0 also support `python` and `cargo`. Choose
+Use the complete example above. `dependencies.format` accepts `npm` or `go`;
+`python` and `cargo` require v0.4.0 or newer. Choose
 exactly one of `allow: [names]` or `deny: [names]`. Names are exact, not globs.
 An empty `allow: []` permits no direct dependencies; an empty deny list is
 invalid. npm `sections` may contain `dependencies`, `devDependencies`,
@@ -135,7 +135,7 @@ leave identity unverified. Do not promise more than the manifest evidence.
 Choose exactly one document condition: `required: true` requires an existing,
 non-null value; `equals: VALUE` requires the selected scalar or null; or
 `forbidden-values: [VALUES]` rejects those existing scalar values but allows
-absence. Source builds after v0.3.0 also accept `allowed-values: [VALUES]`
+absence. Version v0.4.0 or newer also accepts `allowed-values: [VALUES]`
 (a nonempty scalar list; missing values fail) or `pattern: REGEX` (an existing
 string matching a Go/RE2 expression; anchor it for whole-string matching).
 Confirm the installed verifier supports these conditions before using them.

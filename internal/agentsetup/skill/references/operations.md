@@ -44,7 +44,7 @@ that an arbitrary local `main`, current `HEAD`, or a candidate's instructions
 establish a new approved base. The CLI records identity; the repository process
 establishes trust.
 
-Source builds after v0.3.0 accept `--base merge-base:REF`, resolving the unique
+Version v0.4.0 or newer accepts `--base merge-base:REF`, resolving the unique
 common ancestor with the selected candidate (`HEAD` for a working tree).
 An ancestor is not automatically an approved policy source and can predate
 current target-branch policy. Use this only when the repository workflow
