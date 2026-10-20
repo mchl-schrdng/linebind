@@ -14,14 +14,16 @@ Cloud's, downloaded from [Fontsource](https://cdn.jsdelivr.net/fontsource/fonts/
 on 20 October 2026. The [SIL Open Font License](../../internal/report/fonts/OFL.txt)
 is bundled in every generated report. Reports make no font or image request.
 
-The README's [mecha](mecha-line.webp) is original decorative artwork, generated
-with the built-in Imagegen tool on 20 October 2026 and shared with Linebind
-Cloud. The WebP is 1122 × 1402 pixels. Its ivory machine holds a single coral
-line against midnight blue; it illustrates the product's boundary motif.
+The README's [panoramic mecha](mecha-banner.webp) is original decorative artwork,
+adapted with the built-in Imagegen tool on 20 October 2026 from the approved
+Linebind Cloud portrait. The composition was redrawn for the wide banner,
+then encoded as a 1600 × 541 WebP. The README displays it at full content width.
+Its ivory machine holds a single coral line against midnight blue; it
+illustrates the product's boundary motif.
 It is not a product screenshot or evidence of a check. The approved direction
 uses polished manga and mecha illustration, with an Evangelion influence but
 no existing character or unit. The source generation remains in the owner's
-image library. [Full generation prompt](mecha-prompt.md)
+image library. [Adaptation and original generation prompts](mecha-prompt.md)
 
 The README keeps the measured v0.4.0 screenshots below as historical examples.
 Their original appearance and recorded evidence are unchanged; the current

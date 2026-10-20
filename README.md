@@ -45,7 +45,7 @@ adds a GitHub App and shared PR reports, currently free during early access.
 It is optional; local checks and CI work without it.
 
 <p align="center">
-  <img src="docs/assets/mecha-line.webp" width="420" alt="Original Linebind illustration: an ivory mecha holds a taut coral line against a midnight-blue background.">
+  <img src="docs/assets/mecha-banner.webp" width="100%" alt="Original panoramic Linebind illustration: an ivory mecha and its articulated hand hold a coral line across a midnight-blue background.">
 </p>
 
 <p align="center"><sub>Your repository. Your contract. <a href="docs/assets/README.md#official-identity">Original artwork and brand colors</a></sub></p>

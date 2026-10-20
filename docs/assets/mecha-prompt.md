@@ -1,7 +1,17 @@
-# Linebind mecha — original generation prompt
+# Linebind mecha — generation prompts
 
-Built-in Imagegen, 20 October 2026. The approved Cloud image is reused without
-visual edits; only its original WebP encoding is copied into this repository.
+## Panoramic README adaptation
+
+Built-in Imagegen, 20 October 2026. The approved Cloud portrait was the edit
+target. The output is a new horizontal composition, encoded as a 1600 × 541
+WebP at quality 84 without cropping or stretching.
+
+Use case: compositing. Asset type: GitHub README full-width panoramic banner, approximately 3:1, 1600 × 540 or equivalent. Input image 1 is the approved original Linebind mecha and the edit target. Recompose it into a genuinely horizontal cinematic manga frontispiece. Preserve the same unique ivory armored mecha design, elongated face, tiny coral eye, dense graphite crosshatching, articulated mechanical fingers, restrained original ink drawing and matte midnight navy #0d1024 background. Show the face and upper body on the right half, with the articulated hand extending toward the left; the single taut coral orange #d65c46 filament runs clearly across the lower third through the hand. Spread the composition across the panorama while keeping the recognizable face, hand and line readable at GitHub's 850-pixel README content width. Reframe and redraw naturally for the wide format, do not stretch the portrait and do not merely add empty sidebars around a centered portrait. Sparse navy breathing room on the left; a strong balanced silhouette across the entire landscape. Highest quality hand-drawn mecha manga, fine deliberate black contours, bone-white armor with subtle graphite shading and gray mechanical joints, precise purposeful coral accents. Keep all artwork inside the horizontal canvas, no cut-off face or fingertip. No text, no words, no logos, no badges, no UI, no watermark, no borders, no typography, no extra character, no weapons, no glow, no gradients, no glossy 3D rendering.
+
+## Original Cloud portrait
+
+Built-in Imagegen, 20 October 2026. The original image remains in the Cloud
+project and the owner's image library.
 
 Use case: ads-marketing. Create a genuinely exceptional original manga-mecha
 illustration for the hero of a developer tool named Linebind. ART ONLY, no website
