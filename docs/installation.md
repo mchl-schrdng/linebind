@@ -7,31 +7,31 @@ external command requires its own tools and explicit `--allow-exec` permission.
 Download the archive matching your computer, plus `SHA256SUMS`, from the
 [GitHub release](https://github.com/mchl-schrdng/linebind/releases).
 
-| Platform | Architecture | v0.4.2 archive |
+| Platform | Architecture | v0.4.3 archive |
 | --- | --- | --- |
-| macOS | Apple silicon | `linebind_0.4.2_darwin_arm64.tar.gz` |
-| macOS | Intel | `linebind_0.4.2_darwin_amd64.tar.gz` |
-| Linux | x86-64 | `linebind_0.4.2_linux_amd64.tar.gz` |
-| Linux | ARM64 | `linebind_0.4.2_linux_arm64.tar.gz` |
-| Windows | x86-64 | `linebind_0.4.2_windows_amd64.zip` |
-| Windows | ARM64 | `linebind_0.4.2_windows_arm64.zip` |
+| macOS | Apple silicon | `linebind_0.4.3_darwin_arm64.tar.gz` |
+| macOS | Intel | `linebind_0.4.3_darwin_amd64.tar.gz` |
+| Linux | x86-64 | `linebind_0.4.3_linux_amd64.tar.gz` |
+| Linux | ARM64 | `linebind_0.4.3_linux_arm64.tar.gz` |
+| Windows | x86-64 | `linebind_0.4.3_windows_amd64.zip` |
+| Windows | ARM64 | `linebind_0.4.3_windows_arm64.zip` |
 
 On macOS, calculate the downloaded archive's digest with:
 
 ```sh
-shasum -a 256 linebind_0.4.2_darwin_arm64.tar.gz
+shasum -a 256 linebind_0.4.3_darwin_arm64.tar.gz
 ```
 
 On Linux use `sha256sum ARCHIVE`; on Windows use
 `Get-FileHash ARCHIVE -Algorithm SHA256` in PowerShell. Compare the result with
 the matching filename in `SHA256SUMS` before extracting. Checksums detect an
-altered download; v0.4.2 archives are not signed or notarized.
+altered download; v0.4.3 archives are not signed or notarized.
 
 Extract the archive, then move the executable into a directory on your `PATH`,
 or run it by its full path. For example, on an Apple silicon Mac:
 
 ```sh
-tar -xzf linebind_0.4.2_darwin_arm64.tar.gz
+tar -xzf linebind_0.4.3_darwin_arm64.tar.gz
 ./linebind --version
 ```
 
