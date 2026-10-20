@@ -6,10 +6,10 @@ branding:
 inputs:
   version:
     description: Exact published version; update sha256 together with this value.
-    default: v0.4.1
+    default: v0.5.0
   sha256:
     description: Independently reviewed SHA-256 of the Linux amd64 release archive.
-    default: ab9fddad704f6d28ee8d42315784166673336c8b780263bf9e4ff8b8cdd5827a
+    default: eaa31c3379a9031c6d2178125bb341b591600f6b150e19d8e6bde50c831cb1dc
 outputs:
   binary:
     description: Absolute path to the verified executable, also added to PATH.

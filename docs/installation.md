@@ -47,7 +47,7 @@ repository's review process adopts the contract; preview does not approve it.
 ## GitHub Actions
 
 The repository includes a [setup Action](../action.yml) for Linux x64 runners.
-It installs the pinned v0.4.1 release, verifies its SHA-256 and adds it to `PATH`.
+It installs the pinned v0.5.0 release, verifies its SHA-256 and adds it to `PATH`.
 See the [CI guide](ci.md#install-with-the-setup-action) for commit pinning,
 base/head selection and report retention. No Homebrew tap is published.
 
