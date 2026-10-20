@@ -85,6 +85,8 @@ The comparison uses the two captured endpoints, not intermediate commits.
 Renames count as removal plus addition. Mode-only changes and Git's LF/CRLF
 text checkout conversions do not count.
 Every required pattern is independent; one file can satisfy multiple patterns.
+Keep trigger and companion patterns separate: a changed file matching both
+can satisfy its own obligation.
 There is no filename pairing, AST analysis or semantic comparison. Any content
 edit, including whitespace, counts; this checks delivery of an accompanying
 edit, not its quality or the sufficiency of tests. Keep normal review and tests.
