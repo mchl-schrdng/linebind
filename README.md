@@ -48,8 +48,6 @@ It is optional; local checks and CI work without it.
   <img src="docs/assets/mecha-banner.webp" width="100%" alt="Original panoramic Linebind illustration: an ivory mecha and its articulated hand hold a coral line across a midnight-blue background.">
 </p>
 
-<p align="center"><sub>Your repository. Your contract. <a href="docs/assets/README.md#official-identity">Original artwork and brand colors</a></sub></p>
-
 ## Get started
 
 Download the [latest release](https://github.com/mchl-schrdng/linebind/releases/latest)
