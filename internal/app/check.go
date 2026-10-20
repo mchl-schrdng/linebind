@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -9,7 +8,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/mchl-schrdng/linebind/internal/contract"
 	"github.com/mchl-schrdng/linebind/internal/model"
@@ -145,7 +143,7 @@ func evaluate(opt Options, purpose string) model.Report {
 			change, detail = "added", "Candidate policy file is absent from the comparison base."
 		case approvedExists && !proposedExists:
 			change, detail = "removed", "Policy file from the base is absent from the candidate."
-		case approvedExists && proposedExists && (!policyEqual(approved, proposed) || base.Executable[name] != candidate.Executable[name]):
+		case approvedExists && proposedExists && (!contract.SameContent(approved, proposed) || base.Executable[name] != candidate.Executable[name]):
 			change, detail = "modified", "Candidate policy differs from the base revision."
 		}
 		if change != "" {
@@ -161,20 +159,32 @@ func evaluate(opt Options, purpose string) model.Report {
 		return fail(fmt.Errorf("approved policy file %s is unavailable", missingPolicy))
 	}
 	r.Checks = contract.Evaluate(c, candidate.Files)
-	previous := contract.Evaluate(c, base.Files)
 	for i, rule := range c.Rules {
 		if rule.Kind == "command" {
 			r.Checks[i] = runCommand(rule, candidate, policySource, opt.AllowExec)
-			if rule.Compare == "new" {
-				previous[i] = runCommand(rule, base, policySource, opt.AllowExec)
-			}
+		} else if rule.Kind == "co-change" {
+			r.Checks[i] = contract.EvaluateChanges(rule, base.Files, candidate.Files)
 		}
 		r.Checks[i].Specification = rule.Specification
 		markOmissions(rule, candidate, &r.Checks[i])
-		markOmissions(rule, base, &previous[i])
 		if rule.Compare == "new" {
-			compare(&r.Checks[i], previous[i])
+			previous := contract.EvaluateBaseline(rule, base.Files)
+			if rule.Kind == "command" {
+				previous = runCommand(rule, base, policySource, opt.AllowExec)
+			}
+			markOmissions(rule, base, &previous)
+			compare(&r.Checks[i], previous)
 		} else {
+			if rule.Kind == "co-change" {
+				previous := model.Check{}
+				markOmissions(rule, base, &previous)
+				if previous.Status == "unverified" {
+					r.Checks[i].Status = "unverified"
+					for _, diagnostic := range previous.Diagnostics {
+						r.Checks[i].Diagnostics = append(r.Checks[i].Diagnostics, "Base: "+diagnostic)
+					}
+				}
+			}
 			for j := range r.Checks[i].Findings {
 				r.Checks[i].Findings[j].Evolution = "not_comparable"
 			}
@@ -184,24 +194,14 @@ func evaluate(opt Options, purpose string) model.Report {
 	return r
 }
 
-func policyEqual(a, b []byte) bool {
-	if bytes.Equal(a, b) {
-		return true
-	}
-	// Git may check text out with CRLF. Preserve literal comparison for every
-	// other byte change, including comments and whitespace within lines.
-	if !utf8.Valid(a) || !utf8.Valid(b) || bytes.ContainsRune(a, 0) || bytes.ContainsRune(b, 0) {
-		return false
-	}
-	return bytes.Equal(bytes.ReplaceAll(a, []byte("\r\n"), []byte("\n")), bytes.ReplaceAll(b, []byte("\r\n"), []byte("\n")))
-}
-
 func digest(data []byte) string { sum := sha256.Sum256(data); return hex.EncodeToString(sum[:]) }
 
 func markOmissions(rule contract.Rule, s *repository.Snapshot, c *model.Check) {
 	patterns := rule.Scope
 	if rule.Files != nil {
 		patterns = rule.Files.Require
+	} else if rule.CoChange != nil {
+		patterns = append(append([]string{}, patterns...), rule.CoChange.Require...)
 	}
 	names := make([]string, 0, len(s.Omitted))
 	for name := range s.Omitted {
@@ -247,6 +247,9 @@ func omissionMatches(name, detail string, patterns []string) bool {
 func compare(current *model.Check, base model.Check) {
 	if base.Status == "unverified" || current.Status == "unverified" {
 		current.Status = "unverified"
+		for _, diagnostic := range base.Diagnostics {
+			current.Diagnostics = append(current.Diagnostics, "Base: "+diagnostic)
+		}
 		current.Diagnostics = append(current.Diagnostics, "Cannot compare findings: base or candidate verification is incomplete.")
 		for i := range current.Findings {
 			current.Findings[i].Evolution = "not_comparable"

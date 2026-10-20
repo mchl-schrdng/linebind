@@ -27,7 +27,7 @@ Use literal `true` and `false` for booleans.
 | Field | Meaning |
 | --- | --- |
 | `id` | Stable, unique identifier: 1–128 letters, digits, dots, underscores or hyphens; begins with a letter or digit. |
-| `kind` | One of `require-files`, `forbid-text`, `dependencies`, `document`, `command`. |
+| `kind` | One of `require-files`, `forbid-text`, `dependencies`, `document`, `co-change`, `command`. |
 | `reason` | Required explanation of the project decision. |
 | `scope` | Repository-relative globs selecting files. Required except for `require-files`. |
 | `required` | Defaults to `true`. Set `false` for an advisory check. |
@@ -35,12 +35,14 @@ Use literal `true` and `false` for booleans.
 | `remediation` | Optional next step shown with findings. |
 
 Use exactly one configuration block matching `kind`: `files`, `text`,
-`dependencies`, `document` or `command`.
+`dependencies`, `document`, `co-change` or `command`.
 
 Paths use `/` on every platform. Globs support `**`, for example `src/**/*.ts`.
 They must be relative to the repository root: no absolute paths or `..`
-traversal. Except for `require-files`, a scope matching no files is unverified.
-An empty selection is not a successful check.
+traversal. A candidate scope matching no files is unverified, except for
+`require-files` (missing files are violations) and `co-change` (no trigger means
+no obligation). For `compare: new`, v0.5.0 also permits a known empty base scope
+for native text, dependency and document checks; see [comparison](#compare-existing-debt).
 
 ## Require files
 
@@ -57,6 +59,41 @@ Each pattern in `files.require` must match at least one captured file. When
 ```
 
 This establishes presence, not the document's accuracy or completeness.
+
+## Co-change
+
+Requires v0.5.0 or newer. When any file in `scope` is added, removed or changes
+contents between the base and candidate, **each** pattern in `co-change.require`
+must match at least one added or content-modified file that exists in the candidate.
+
+```yaml
+- id: migration-guide
+  kind: co-change
+  reason: Ship migration instructions with schema changes.
+  scope: [migrations/**]
+  co-change:
+    require: [docs/migrations.md]
+  remediation: Describe how to apply or revert this migration.
+```
+
+Adding a migration without updating the guide crosses the check. Adding the
+guide or changing its contents satisfies it. Deleting the guide does not.
+If no scoped file changed, the check passes even when no trigger file exists.
+Use `require-files` separately when the companion must always be present.
+
+The comparison uses the two captured endpoints, not intermediate commits.
+Renames count as removal plus addition. Mode-only changes and Git's LF/CRLF
+text checkout conversions do not count.
+Every required pattern is independent; one file can satisfy multiple patterns.
+There is no filename pairing, AST analysis or semantic comparison. Any content
+edit, including whitespace, counts; this checks delivery of an accompanying
+edit, not its quality or the sufficiency of tests. Keep normal review and tests.
+
+Omitted inputs under either the trigger or companion patterns leave the check
+unverified. `compare: new` is rejected because this rule already compares the
+base and candidate. `required: false` makes the obligation advisory.
+`check` takes this rule from the trusted base; changing it in a candidate cannot
+authorize that candidate. `preview` evaluates the proposed rule instead.
 
 ## Forbid text
 
@@ -306,9 +343,18 @@ not evidence that existing debt is acceptable forever. If either analysis is
 incomplete, findings cannot be reliably classified and the comparison is
 unverified. There is no separately editable baseline file.
 
+Since v0.5.0, a base with no matching files is an empty baseline for `forbid-text`,
+`dependencies` and `document`. A first conforming file can pass; its violations
+are new. This applies only to known absence: omitted, oversized, unreadable or
+unsupported base inputs still prevent comparison, with a `Base:` diagnostic.
+An empty candidate scope remains unverified. Command rules still require a
+complete base execution; `require-files` still reports missing files.
+
 Native fingerprints include the rule's predicate, file and relevant evidence.
 Text identities include the matched line context and occurrence; line-number
-movement alone does not create a new finding. Renames or changes to evidence
+movement or indentation alone does not create a new finding. Internal line
+reformatting can produce a new finding: text checks do not normalize language
+syntax. Renames or changes to evidence
 can produce new findings. Structured tool messages also participate in their
 identity, so pin tool versions when comparing runs.
 

@@ -109,8 +109,8 @@ func TestCLIInitCheckAndOfflineReport(t *testing.T) {
 	cli(t, 2, "check", "--repo", dir, "--base", "HEAD", "--format", "json", "--agent")
 }
 
-func TestInitRejectsContractCollidingWithGitignore(t *testing.T) {
-	for _, name := range []string{".gitignore", ".GITIGNORE", ".gitignore/contract.yml"} {
+func TestInitRejectsContractCollidingWithManagedPaths(t *testing.T) {
+	for _, name := range []string{".gitignore", ".GITIGNORE", ".gitignore/contract.yml", ".linebind", ".linebind/contract.yml", ".LINEBIND/contract.yml"} {
 		t.Run(name, func(t *testing.T) {
 			dir := t.TempDir()
 			git(t, dir, "init", "-q")
@@ -121,6 +121,54 @@ func TestInitRejectsContractCollidingWithGitignore(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestContractUnderSymlinkCannotBeInitializedOrValidated(t *testing.T) {
+	dir := t.TempDir()
+	git(t, dir, "init", "-q")
+	if err := os.Mkdir(filepath.Join(dir, "real"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("real", filepath.Join(dir, "policy")); err != nil {
+		t.Skipf("symlink fixture unavailable: %v", err)
+	}
+	cli(t, 2, "init", "--repo", dir, "--contract", "policy/contract.yml")
+	if _, err := os.Stat(filepath.Join(dir, "real", "contract.yml")); !os.IsNotExist(err) {
+		t.Fatal("init wrote through a symlink")
+	}
+	cli(t, 0, "init", "--repo", dir, "--contract", "real/contract.yml")
+	cli(t, 0, "validate", "--repo", dir, "--contract", "real/contract.yml")
+	cli(t, 2, "validate", "--repo", dir, "--contract", "policy/contract.yml")
+}
+
+func TestCoChangeJSONCanBeRenderedAndReplaced(t *testing.T) {
+	dir := t.TempDir()
+	git(t, dir, "init", "-q")
+	cli(t, 0, "init", "--repo", dir)
+	write(t, filepath.Join(dir, ".linebind.yml"), `version: 1
+name: Delivery
+rules:
+  - id: guide
+    kind: co-change
+    reason: Explain schema changes.
+    scope: [schema.sql]
+    co-change:
+      require: [README.md]
+`)
+	write(t, filepath.Join(dir, "README.md"), "Guide\n")
+	git(t, dir, "add", ".")
+	git(t, dir, "commit", "-qm", "base")
+	write(t, filepath.Join(dir, "schema.sql"), "create table orders(id int);")
+	jsonPath, htmlPath := filepath.Join(dir, ".linebind", "report.json"), filepath.Join(dir, ".linebind", "report.html")
+	cli(t, 1, "check", "--repo", dir, "--base", "HEAD", "--format", "json", "--output", jsonPath, "--html", htmlPath)
+	cli(t, 0, "report", jsonPath, "--output", htmlPath)
+	html, err := os.ReadFile(htmlPath)
+	if err != nil || !bytes.Contains(html, []byte("co-change")) || !bytes.Contains(html, []byte("add or modify at least one file matching README.md")) {
+		t.Fatalf("missing co-change evidence: %v", err)
+	}
+	write(t, filepath.Join(dir, "README.md"), "Apply the schema migration.\n")
+	cli(t, 0, "check", "--repo", dir, "--base", "HEAD", "--format", "json", "--output", jsonPath, "--html", htmlPath)
+	cli(t, 0, "report", jsonPath, "--output", htmlPath)
 }
 
 func TestOutputsRefuseSourceAndValidateReportSchema(t *testing.T) {

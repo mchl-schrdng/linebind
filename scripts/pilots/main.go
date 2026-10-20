@@ -94,7 +94,7 @@ func run(binary, examples, out string, public, dataCommand bool) error {
 	if err != nil {
 		return err
 	}
-	for _, name := range []string{"frontend", "backend", "data", "infrastructure"} {
+	for _, name := range []string{"frontend", "backend", "data", "infrastructure", "co-change"} {
 		if err := r.fixture(name); err != nil {
 			return fmt.Errorf("%s: %w", name, err)
 		}
@@ -144,7 +144,11 @@ func (r *runner) fixture(name string) error {
 	if err != nil {
 		return err
 	}
-	for _, variant := range []string{"passed", "crossed", "unverified", "contract-removed"} {
+	variants := []string{"passed", "crossed", "unverified", "contract-removed"}
+	if name == "co-change" {
+		variants = append(variants, "repaired")
+	}
+	for _, variant := range variants {
 		if err := copyTree(filepath.Join(source, "base"), dir); err != nil {
 			return err
 		}
@@ -152,7 +156,13 @@ func (r *runner) fixture(name string) error {
 		if variant == "contract-removed" {
 			overlay = "crossed"
 		}
-		if variant != "passed" {
+		if name == "co-change" && variant == "unverified" {
+			// Generate the unavailable input here so our own source snapshot stays complete.
+			pointer := "version https://git-lfs.github.com/spec/v1\noid sha256:" + strings.Repeat("0", 64) + "\nsize 42\n"
+			if err := os.WriteFile(filepath.Join(dir, "docs", "migrations.md"), []byte(pointer), 0o644); err != nil {
+				return err
+			}
+		} else if variant != "passed" {
 			if err := copyTree(filepath.Join(source, overlay), dir); err != nil {
 				return err
 			}
@@ -287,6 +297,8 @@ func (r *runner) approve(dir string) (string, string, error) {
 func (r *runner) check(name, source, variant, dir, base, hash, upstream string, allowExec bool) error {
 	status, code := variant, 0
 	switch variant {
+	case "repaired":
+		status = "passed"
 	case "crossed", "contract-removed", "duplicate", "null":
 		status, code = "crossed", 1
 	case "unverified", "write-attempt", "exec-disabled":

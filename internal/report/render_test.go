@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"html"
 	"regexp"
 	"strings"
 	"testing"
@@ -49,6 +50,64 @@ func TestHTMLRetainsEvidenceAndIncompleteResults(t *testing.T) {
 	// selects a panel after load rather than hiding evidence in the HTML response.
 	if strings.Contains(out.String(), `class="clause-panel" hidden`) {
 		t.Error("HTML hides check evidence before progressive enhancement")
+	}
+}
+
+func TestCheckTranscriptKeepsScopedEvidenceWithoutRepeatingGlobalDetails(t *testing.T) {
+	result := sampleReport()
+	result.Diagnostics = []string{"Global diagnostic retained in the full report."}
+	result.RuleChangeNote = "Global rule-change note retained in the full report."
+	result.RuleChanges = []model.RuleChange{
+		{ID: "client-boundary", Change: "modified", Before: "old client rule", After: "new client rule"},
+		{ID: "api-compatibility", Change: "modified", Before: "old API rule", After: "new API rule"},
+	}
+	result.Checks[0].Specification = "The evaluated client rule."
+	result.Checks[0].Diagnostics = []string{"Check diagnostic retained in the excerpt."}
+	result.Checks[0].Findings[0].Fingerprint = "finding-reference"
+	var rendered, full bytes.Buffer
+	if err := Render(&rendered, result); err != nil {
+		t.Fatal(err)
+	}
+	if err := Text(&full, result, true); err != nil {
+		t.Fatal(err)
+	}
+	transcript := func(id string) string {
+		t.Helper()
+		pattern := `(?s)<pre[^>]* id="` + regexp.QuoteMeta(id) + `"[^>]*>(.*?)</pre>`
+		match := regexp.MustCompile(pattern).FindStringSubmatch(rendered.String())
+		if len(match) != 2 {
+			t.Fatalf("missing transcript %s", id)
+		}
+		return html.UnescapeString(match[1])
+	}
+	if transcript("diagnostic-text") != full.String() {
+		t.Fatal("full report transcript lost evidence")
+	}
+	excerpt := transcript("diagnostic-check-0")
+	for _, want := range []string{
+		"The header status is the overall report outcome.",
+		"Contract hash: " + result.ContractHash,
+		"Input digest: " + result.InputDigest,
+		result.Checks[0].Specification,
+		result.Checks[0].Diagnostics[0],
+		result.Checks[0].Findings[0].Message,
+		"Reference: finding-reference",
+		"Rule change [modified]: client-boundary",
+		"old client rule", "new client rule",
+	} {
+		if !strings.Contains(excerpt, want) {
+			t.Errorf("check excerpt lost %q", want)
+		}
+	}
+	for _, unwanted := range []string{
+		result.Diagnostics[0], result.RuleChangeNote,
+		"Contract change [", result.Changes[0].Detail,
+		"Rule change [modified]: api-compatibility",
+		"old API rule", "new API rule",
+	} {
+		if strings.Contains(excerpt, unwanted) {
+			t.Errorf("check excerpt repeats unrelated detail %q", unwanted)
+		}
 	}
 }
 

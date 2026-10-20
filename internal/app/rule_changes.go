@@ -46,7 +46,7 @@ func describeRuleChanges(base, candidate *repository.Snapshot, path string) ([]m
 		for _, file := range slices.Compact(files) {
 			a, aOK := base.Files[file]
 			b, bOK := candidate.Files[file]
-			if aOK != bOK || !policyEqual(a, b) || base.Executable[file] != candidate.Executable[file] {
+			if aOK != bOK || !contract.SameContent(a, b) || base.Executable[file] != candidate.Executable[file] {
 				change.PolicyFiles = append(change.PolicyFiles, file)
 			}
 		}

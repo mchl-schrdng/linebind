@@ -53,7 +53,7 @@ Maintainers use Go 1.27.2 for release builds. This command creates six archives
 and `SHA256SUMS` in a new directory; it does not publish anything:
 
 ```sh
-go run ./scripts/package -version v0.4.0 -out dist
+go run ./scripts/package -version v0.5.0 -out dist
 ```
 
 The commit defaults to `git rev-parse HEAD`. Each archive contains the binary,
@@ -66,7 +66,7 @@ OS/architecture combinations are cross-compiled; this does not mean every
 architecture has been executed on native hardware. A separate CI job tests the
 supported Go 1.26 series.
 
-Pushing an exact stable tag such as `v0.4.0` runs the same checks and publishes
+Pushing an exact stable tag such as `v0.5.0` runs the same checks and publishes
 the tested archives as a GitHub release. Only the final publishing job has
 repository write permission. Action versions are pinned to upstream commit SHAs.
 

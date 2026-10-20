@@ -36,6 +36,7 @@ type Rule struct {
 	Dependencies  *DependenciesRule `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
 	Document      *DocumentRule     `yaml:"document,omitempty" json:"document,omitempty"`
 	Command       *CommandRule      `yaml:"command,omitempty" json:"command,omitempty"`
+	CoChange      *CoChangeRule     `yaml:"co-change,omitempty" json:"co-change,omitempty"`
 }
 
 type TextRule struct {
@@ -43,6 +44,10 @@ type TextRule struct {
 }
 
 type FilesRule struct {
+	Require []string `yaml:"require" json:"require"`
+}
+
+type CoChangeRule struct {
 	Require []string `yaml:"require" json:"require"`
 }
 
@@ -162,7 +167,7 @@ func validateRule(r *Rule) error {
 		return fmt.Errorf("compare must be strict or new")
 	}
 	blocks := 0
-	for _, present := range []bool{r.Text != nil, r.Files != nil, r.Dependencies != nil, r.Document != nil, r.Command != nil} {
+	for _, present := range []bool{r.Text != nil, r.Files != nil, r.Dependencies != nil, r.Document != nil, r.Command != nil, r.CoChange != nil} {
 		if present {
 			blocks++
 		}
@@ -179,6 +184,18 @@ func validateRule(r *Rule) error {
 		}
 	}
 	switch r.Kind {
+	case "co-change":
+		if r.CoChange == nil || len(r.CoChange.Require) == 0 {
+			return fmt.Errorf("co-change requires co-change.require patterns")
+		}
+		if r.Compare != "strict" {
+			return fmt.Errorf("co-change already compares base and candidate; compare must be strict")
+		}
+		for _, p := range r.CoChange.Require {
+			if err := validatePattern(p); err != nil {
+				return err
+			}
+		}
 	case "forbid-text":
 		if r.Text == nil {
 			return fmt.Errorf("forbid-text requires text")

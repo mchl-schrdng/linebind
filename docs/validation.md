@@ -231,3 +231,17 @@ Action repository, Homebrew distribution and additional Action runner platforms
 out of scope. Unknown identities remain unverified instead of passing. The
 Action source and CLI release are independently pinned. No new release or
 floating Action tag is published by these source changes.
+
+## v0.5.0 regression coverage
+
+The native example runner now includes five co-change cases, for 21 native
+cases total (31 with the optional SQLite and pinned public-repository cases).
+The new rule is also exercised through check, preview and saved JSON-to-HTML
+rendering. Tests cover new/deleted/renamed triggers, companion deletion, every
+required pattern, omitted evidence on either side, and attempted candidate-policy
+weakening. These are synthetic cases, not proof of real-world adoption.
+
+Comparison regressions distinguish a known empty native base scope from omitted
+inputs. A first clean file passes, a first violation is new, and unavailable base
+evidence remains unverified with its cause visible. Candidate empty scopes and
+external-command execution retain their existing conservative behavior.

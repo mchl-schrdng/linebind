@@ -5,8 +5,8 @@
   </picture>
 </p>
 
-<p align="center"><strong>Versioned repository rules. Evidence for every change.</strong></p>
-<p align="center">Declare the decisions your project relies on.<br>Check changes locally and in CI. Read the rule, result and evidence together.</p>
+<p align="center"><strong>Keep project decisions from drifting.</strong></p>
+<p align="center">A free, open-source CLI for explicit repository rules.<br>Check a change against its trusted base. See what crossed the line.</p>
 
 <p align="center">
   <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush"><img src="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="CI — main branch"></a>
@@ -30,10 +30,19 @@
   <a href="docs/configuration.md">Configuration</a>
 </p>
 
-Linebind checks files, dependency declarations and configuration against a YAML
-contract. One executable and Git are enough for native checks: no account,
-package installation or model API. Results stay readable in the terminal,
-JSON and a self-contained, offline HTML report.
+A PR can pass its tests and still add an unwanted dependency, change a deployment
+setting or ship a migration without its notes. Linebind checks those explicit
+project decisions against a YAML contract stored in Git.
+
+**`check` reads the contract from the selected trusted base.** A PR cannot make
+itself pass by weakening that contract. Proposed rule changes remain visible
+for review; `preview` lets you evaluate them before adoption.
+
+The CLI is **free and MIT-licensed**. Native checks need only Linebind and Git:
+no account, dependency installation or model API. Results are available in the
+terminal, JSON and an offline HTML report. [Linebind Cloud](https://linebind-cloud.vercel.app/)
+adds a GitHub App and shared PR reports, currently free during early access.
+It is optional; local checks and CI work without it.
 
 <p align="center">
   <a href="docs/assets/report-v0.4.0/mac/line-mac.png">
@@ -47,14 +56,6 @@ In the HTML report, each mark represents a declared check. Select a mark to
 read its reason, evaluated rule, evidence and next step. Required failures rise
 above the line; advisory failures sit below it. Hollow marks mean verification
 is incomplete.
-
-<p align="center">
-  <a href="docs/assets/report-v0.4.0/mac/report-mac.png">
-    <img src="docs/assets/report-v0.4.0/mac/report-mac.png" alt="Complete Linebind report in a Mac-style browser window: contract line, all five checks, selected dependency evidence, next step, provenance and footer.">
-  </a>
-</p>
-
-<p align="center"><sub>The complete interface: declared checks, evidence and provenance in one offline report.</sub></p>
 
 ## Get started
 
@@ -112,13 +113,23 @@ Remove an accidental dependency and rerun the check. If the project deliberately
 needs a new package, propose the dependency and contract change together. The
 report keeps that policy change visible for review.
 
-<p align="center">
-  <a href="docs/assets/report-v0.4.0/mac/terminal-mac.png">
-    <img src="docs/assets/report-v0.4.0/mac/terminal-mac.png" alt="Mac-style Terminal showing captured Linebind v0.4.0 output: the runtime dependency rule rejects jquery, explains the reason and next step, and returns exit code 1.">
-  </a>
-</p>
+## Keep related changes together
 
-<p align="center"><sub>The same rule, straight from the CLI. Captured stdout from the one-rule README fixture; exit <code>1</code>. <a href="docs/assets/README.md">Output and reproduction</a></sub></p>
+New in v0.5.0: a `co-change` rule can require migration notes when SQL changes.
+Add this rule to your contract:
+
+```yaml
+- id: migration-guide
+  kind: co-change
+  reason: Ship migration instructions with schema changes.
+  scope: [migrations/**]
+  co-change:
+    require: [docs/migrations.md]
+```
+
+Changing a migration without adding or updating the guide crosses the check.
+Deleting the guide does not satisfy it. This verifies an accompanying edit,
+not its quality; a whitespace edit counts. [Runnable example](examples/co-change/README.md)
 
 ## What can a contract check?
 
@@ -128,6 +139,7 @@ report keeps that policy change visible for review.
 | [`forbid-text`](docs/configuration.md#forbid-text) | Keep debug markers out of shipped source | Go/RE2 patterns in selected text |
 | [`dependencies`](docs/configuration.md#dependency-names) | Review new runtime packages | Declared names in npm, Go, Python and Cargo manifests |
 | [`document`](docs/configuration.md#json-and-yaml-values) | Preserve an API operation or deployment setting | Selected JSON/YAML values |
+| [`co-change`](docs/configuration.md#co-change) | Ship notes with a migration | Accompanying content edits between base and candidate |
 | [`command`](docs/configuration.md#project-commands) | Run an existing architectural or policy verifier | Exit codes, dependency-cruiser or Conftest results |
 
 Each rule records a reason, its inputs and optional remediation. Use
@@ -161,38 +173,24 @@ Both commands inspect the working tree by default. Add `--head "$HEAD_SHA"`
 to evaluate a committed candidate. Editing the candidate allowlist does not
 change the rules used by `check`.
 
-<p align="center">
-  <a href="docs/assets/report-v0.4.0/mac/preview-mac.png">
-    <img src="docs/assets/report-v0.4.0/mac/preview-mac.png" alt="Linebind preview in a Mac-style window: Preview / not approved stays visible above the passing result and full before/after YAML showing zod added to the allowlist.">
-  </a>
-</p>
-
-<p align="center"><sub>A deliberate allowlist change in the same fixture. Before/after definitions stay visible; <strong>Preview / not approved</strong> identifies the proposed policy. <a href="docs/assets/README.md">Capture notes and evidence</a></sub></p>
-
-The preview above passes. A separate `check` against the original base still
-returns `1`. Merging after the required checks and policy review adopts the
-proposal in this repository. [Trust model](docs/trust-model.md)
+A proposed allowlist can pass `preview` while `check` against the original base
+still reports the policy change. Review and merge adopt the proposal; preview
+never approves it. [Example report](docs/assets/report-v0.4.0/mac/preview-mac.png) ·
+[Trust model](docs/trust-model.md)
 
 ## Tested in CI
 
-The badges link to **`main` CI**, **CodeQL analysis**, the latest
-**pull-request contract run** and **tagged releases**. Each opens its workflow
-history; the PR contract badge is not an aggregate of every open PR.
+[CI](.github/workflows/ci.yml) runs Go tests and vet on Linux, macOS and
+Windows, verifies six release archives, exercises installed binaries and
+examples, and checks real tool adapters and report interactions.
+[Tagged releases](.github/workflows/release.yml) run that suite before publishing.
+[CodeQL](.github/workflows/codeql.yml) adds static analysis; a successful run
+is not a guarantee that no security issue exists.
 
-| Workflow | What it verifies |
-| --- | --- |
-| [CI](.github/workflows/ci.yml) | Go tests and vet on Linux, macOS and Windows; six release archives and checksums; installed and extracted binaries; runnable examples; minimum Go version; real external-tool adapters; report interactions; setup Action installation. |
-| [CodeQL](.github/workflows/codeql.yml) | Static security analysis of Go packages built on Linux, with findings published to GitHub code scanning. Runs on PRs and pushes to `main`. |
-| [Repository contract](.github/workflows/contract.yml) | Each PR's proposed contract against explicit base/head commits, using a checksum-pinned published verifier. JSON and offline HTML evidence are retained, including on failure. |
-| [Release](.github/workflows/release.yml) | Runs the CI suite for a version tag, then publishes the tested archives and checksums. |
-
-The contract workflow uses `preview`: valid policy edits can pass proposal
-validation. Required violations, incomplete required checks and invalid
-contracts fail the job. `main` requires its configured test and contract checks
-to pass before merging.
-
-A passing CodeQL badge means the analysis completed successfully; it does not
-mean the repository has no security findings.
+This repository's [contract check](.github/workflows/contract.yml) uses `preview`
+with explicit PR base/head SHAs and a checksum-pinned released verifier. Valid
+policy edits can pass proposal validation; required violations and incomplete
+checks fail. The repository's required CI must pass before merging.
 
 The setup Action supports Linux x64. Its default verifier and this repository's
 contract gate are independently pinned to **v0.4.1**; they do not automatically
