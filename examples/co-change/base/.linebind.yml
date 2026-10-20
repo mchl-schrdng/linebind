@@ -1,0 +1,10 @@
+version: 1
+name: Migration delivery
+rules:
+  - id: migration-guide
+    kind: co-change
+    reason: Ship migration instructions with schema changes.
+    scope: [migrations/**]
+    co-change:
+      require: [docs/migrations.md]
+    remediation: Describe how to apply or revert this migration.

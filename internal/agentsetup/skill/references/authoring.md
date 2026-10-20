@@ -40,13 +40,32 @@ Optional common fields:
 - `compare: new`: block additional findings while preserving existing and
   resolved findings. Default `strict` checks all current violations. `new`
   requires complete analysis on both snapshots and is unavailable for a
-  `command` with `format: exit`. Choosing it is a debt policy, not a way to hide
+  `command` with `format: exit` or a `co-change` rule. Choosing it is a debt policy, not a way to hide
   a task's new failure.
 
-## Five available kinds
+## Available kinds
 
-These are individual rule examples to put under `rules`, not five mandatory
+These are individual rule examples to put under `rules`, not mandatory
 rules to install together.
+
+### Related changes (v0.5.0)
+
+```yaml
+- id: migration-guide
+  kind: co-change
+  reason: Ship migration instructions with schema changes.
+  scope: [migrations/**]
+  co-change:
+    require: [docs/migrations.md]
+```
+
+If any scoped file is added, removed or content-modified, each required pattern
+must match an added or content-modified candidate file. A deletion does not
+satisfy that obligation. No trigger means no obligation; omitted inputs on either
+side remain unverified. Renames are deletion plus addition; mode-only changes
+and LF/CRLF text checkout conversions do not count. This checks that an accompanying edit exists, not its quality.
+Whitespace edits count. Do not claim it proves test coverage or documentation
+accuracy, and do not add it without an explicit delivery decision.
 
 ### Required file presence
 

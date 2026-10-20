@@ -108,6 +108,9 @@ func Render(w io.Writer, result model.Report) error {
 	for _, check := range result.Checks {
 		excerpt := result
 		excerpt.Checks = []model.Check{check}
+		excerpt.Diagnostics = nil
+		excerpt.Changes = nil
+		excerpt.RuleChangeNote = ""
 		excerpt.RuleChanges = nil
 		for _, change := range result.RuleChanges {
 			if change.ID == check.ID {

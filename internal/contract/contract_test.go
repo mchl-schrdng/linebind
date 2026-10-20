@@ -107,6 +107,31 @@ func TestLexicalChecksAndStableIdentity(t *testing.T) {
 	}
 }
 
+func TestTextMatchLocationsAcrossLines(t *testing.T) {
+	for _, tc := range []struct {
+		pattern, text string
+		lines         []int
+	}{
+		{"banned", "banned banned\n\nbanned", []int{1, 1, 3}},
+		{"(?s)begin.*?end", "\nbegin\nend begin\nend\nbegin end", []int{2, 3, 5}},
+		{"(?m)^", "first\nsecond\n", []int{1, 2, 3}},
+		{"banned", "banned\r\nbanned", []int{1, 2}},
+	} {
+		t.Run(tc.pattern+"/"+tc.text, func(t *testing.T) {
+			config := strings.Replace(textContract, `'\bfetch\s*\('`, "'"+tc.pattern+"'", 1)
+			got := oneCheck(t, config, map[string][]byte{"src/a.ts": []byte(tc.text)})
+			if len(got.Findings) != len(tc.lines) {
+				t.Fatal(got)
+			}
+			for i, line := range tc.lines {
+				if got.Findings[i].Line != line {
+					t.Fatalf("match %d: got line %d, want %d", i, got.Findings[i].Line, line)
+				}
+			}
+		})
+	}
+}
+
 func TestMissingScopeAndInvalidInputAreUnverified(t *testing.T) {
 	for name, files := range map[string]map[string][]byte{
 		"empty":     {},

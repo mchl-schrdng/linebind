@@ -13,9 +13,10 @@ explicitly runs an installed Python interpreter.
 | [Backend](../examples/backend/base/.linebind.yml) | `GET /orders` retains its documented `200` response | Replace that declaration with `201` | General OpenAPI compatibility or actual server behavior |
 | [Data](../examples/data/base/.linebind.yml) | The table schema declares `order_id` as non-null | Change `nullable` to `true` | Uniqueness, nulls in actual rows or query correctness |
 | [Infrastructure](../examples/infrastructure/base/.linebind.yml) | A Deployment requests `runAsNonRoot: true` at pod level | Change the field to `false` | Container overrides, image behavior or deployed cluster state |
+| [Co-change](../examples/co-change/base/.linebind.yml) | Ship migration notes with SQL changes | Change SQL without editing the guide | Correctness of SQL, documentation or tests |
 
-Each example contains a `base` tree and two overlays, `crossed` and `unverified`.
-The latter deliberately contains malformed JSON or YAML. A parser failure must
+Each example contains a `base` tree and overlays, `crossed` and `unverified`.
+The latter contains malformed JSON/YAML or an unavailable Git LFS pointer. Missing evidence must
 be reported as incomplete verification, not as compliance or a proven violation.
 
 For a first run with only Git and the installed binary, use the
@@ -36,10 +37,13 @@ contract, and checks these four states for every fixture:
 
 1. **Passed:** unchanged declared input, exit `0`.
 2. **Crossed:** the documented mutation, exit `1`, with a finding.
-3. **Unverified:** malformed input, exit `2`, with a diagnostic.
+3. **Unverified:** malformed or unavailable input, exit `2`, with a diagnostic.
 4. **Contract removed:** the violation plus deletion of `.linebind.yml`, exit
    `1`. The original rule must still find the violation, and the contract deletion
    must appear separately in the report.
+
+The co-change fixture adds a fifth state: **repaired**, where SQL and its guide
+both change and the check passes.
 
 For every state, it also checks the resolved base SHA, approved contract digest,
 JSON verdict, and HTML rendering. Rendering the saved JSON with `linebind report`
@@ -100,7 +104,7 @@ SQL compatibility, completeness of the transformation or general data quality.
 
 The Linux external-tools CI job runs these cases with Python supplied by the
 runner. The native checks remain usable without Python. Combine `-data-command`
-and `-public` to run all 26 scenarios in one evidence directory.
+and `-public` to run all 31 scenarios in one evidence directory.
 
 ## Public repository pilot: p-limit
 
@@ -129,3 +133,10 @@ This is a **public snapshot with seeded mutations**. The policy is not supplied
 or endorsed by p-limit's maintainer. Passing this pilot shows that the narrow
 declared check runs on that snapshot; it is not a historical bug discovery,
 architectural benchmark or adoption claim.
+
+## Related changes (v0.5.0)
+
+The [co-change fixture](../examples/co-change/README.md) requires migration notes
+when SQL changes. Its five variants cover an unchanged repository, missing
+companion edits, incomplete inputs, contract removal and a repaired delivery.
+It runs in the same binary/JSON/HTML validation loop as the other native examples.

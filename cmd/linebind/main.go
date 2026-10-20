@@ -198,6 +198,9 @@ func run(args []string, out, errOut io.Writer) int {
 			return fail(err)
 		}
 		defer root.Close()
+		if err := contractParents(root, *contractPath); err != nil {
+			return fail(err)
+		}
 		info, err := root.Lstat(*contractPath)
 		if err != nil {
 			return fail(err)
@@ -287,6 +290,9 @@ func initialize(dir, name string) error {
 	if strings.EqualFold(first, ".gitignore") {
 		return fmt.Errorf("contract path conflicts with .gitignore, which init manages separately")
 	}
+	if strings.EqualFold(first, ".linebind") {
+		return fmt.Errorf("contract path conflicts with .linebind, which is reserved for ignored reports")
+	}
 	repo, err := repository.Open(dir)
 	if err != nil {
 		return err
@@ -296,6 +302,9 @@ func initialize(dir, name string) error {
 		return err
 	}
 	defer root.Close()
+	if err := contractParents(root, name); err != nil {
+		return err
+	}
 	if _, err := root.Lstat(name); err == nil {
 		return fmt.Errorf("%s already exists; init never replaces a contract", name)
 	} else if !os.IsNotExist(err) {
@@ -342,6 +351,25 @@ func initialize(dir, name string) error {
 		if writeErr != nil || closeErr != nil {
 			root.Remove(name)
 			return errors.Join(writeErr, closeErr)
+		}
+	}
+	return nil
+}
+
+// Snapshot capture skips symlink directories, even when they point inside the repo.
+func contractParents(root *os.Root, name string) error {
+	parts := strings.Split(name, "/")
+	for i := 1; i < len(parts); i++ {
+		parent := strings.Join(parts[:i], "/")
+		info, err := root.Lstat(parent)
+		if os.IsNotExist(err) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("contract parent %s must be a real directory", parent)
 		}
 	}
 	return nil
@@ -473,7 +501,7 @@ func loadReport(data []byte) (model.Report, error) {
 	}
 	seen := map[string]bool{}
 	for _, c := range r.Checks {
-		if c.ID == "" || seen[c.ID] || !validStatus(c.Status) || c.Files < 0 || c.DurationMS < 0 || strings.TrimSpace(c.Reason) == "" || len(c.Scope) == 0 || !slices.Contains([]string{"native", "structured", "command"}, c.Evidence) || !slices.Contains([]string{"require-files", "forbid-text", "dependencies", "document", "command"}, c.Kind) {
+		if c.ID == "" || seen[c.ID] || !validStatus(c.Status) || c.Files < 0 || c.DurationMS < 0 || strings.TrimSpace(c.Reason) == "" || len(c.Scope) == 0 || !slices.Contains([]string{"native", "structured", "command"}, c.Evidence) || !slices.Contains([]string{"require-files", "forbid-text", "dependencies", "document", "command", "co-change"}, c.Kind) {
 			return r, fmt.Errorf("invalid or duplicate report check")
 		}
 		seen[c.ID] = true
