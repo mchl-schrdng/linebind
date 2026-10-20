@@ -193,7 +193,7 @@ policy edits can pass proposal validation; required violations and incomplete
 checks fail. The repository's required CI must pass before merging.
 
 The setup Action supports Linux x64. Its default verifier and this repository's
-contract gate are independently pinned to **v0.4.1**; they do not automatically
+contract gate are independently pinned to **v0.5.0**; they do not automatically
 track the latest release. Select a version and matching checksum explicitly
 when adopting newer rules.
 
