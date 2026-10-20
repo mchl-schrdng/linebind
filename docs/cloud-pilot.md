@@ -40,7 +40,7 @@ permissions:
   id-token: write
 jobs:
   analyze:
-    uses: mchl-schrdng/linebind/.github/workflows/cloud-pilot.yml@ffd0115a9cd7b6b40d69f3bd397efc39f7005663
+    uses: mchl-schrdng/linebind/.github/workflows/cloud-pilot.yml@85d5a32f40de4dfb2da35ad587867cef8b5396a4
 ```
 
 This reviewed workflow is pinned to a full commit SHA. Do not substitute a branch
@@ -63,7 +63,7 @@ pull request may retain the old comparison base in GitHub's event.
 
 The pinned reusable job runs on a GitHub-hosted runner. It checks out the
 comparison base, fetches the candidate as Git objects, and runs the
-checksum-verified v0.4.1 release. Reports include the evaluated rule definitions
+checksum-verified v0.5.0 release. Reports include the evaluated rule definitions
 and added, removed or modified rules, so the hosted review shows the same
 evidence as the CLI. It does not execute candidate code, install
 project dependencies, or enable command checks. Do not add untrusted steps
