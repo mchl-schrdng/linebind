@@ -19,7 +19,7 @@ import (
 //go:embed report.html
 var reportHTML string
 
-//go:embed fonts/barlow-condensed-latin-800.woff2
+//go:embed fonts/syne-latin-variable.woff2
 var displayFont []byte
 
 //go:embed fonts/OFL.txt
