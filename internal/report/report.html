@@ -67,6 +67,7 @@
     .line-point:before{content:"";position:absolute;top:var(--axis);left:0;right:0;height:1px;background:var(--line)}
     .line-point[aria-current="true"]{background:var(--surface-subtle)}
     .line-glyph{position:absolute;top:calc(var(--axis) - 4px);left:calc(50% - 4px);width:8px;height:8px;background:var(--ink);border-radius:50%}
+    .line-point.passed .line-glyph{background:var(--passed)}
     .line-point.crossed .line-glyph{top:calc(var(--axis) - var(--offset) - 4px);background:var(--crossed);border-radius:0;transform:rotate(45deg)}
     .line-point.crossed .line-stem{position:absolute;left:50%;top:calc(var(--axis) - var(--offset) + 4px);width:1px;height:calc(var(--offset) - 4px);background:var(--crossed)}
     .line-point.crossed[data-required="false"] .line-glyph{top:calc(var(--axis) + var(--offset) - 4px)}
@@ -187,7 +188,7 @@
         </div>
         <div class="hero-title {{state .Status}}"><span class="status-mark" aria-hidden="true"></span><h1 id="report-title">{{.Title}}</h1></div>
         <div class="hero-bottom">
-          <p class="summary">{{if .Checks}}<span><strong>{{len .Checks}}</strong> checks declared</span><span><strong>{{.Crossed}}</strong> crossed</span><span><strong>{{.Unverified}}</strong> not verified</span>{{else}}<span>No check results available</span>{{end}}</p>
+          <p class="summary">{{if .Checks}}<span><strong>{{len .Checks}}</strong> {{if eq (len .Checks) 1}}check{{else}}checks{{end}} declared</span><span><strong>{{.Crossed}}</strong> crossed</span><span><strong>{{.Unverified}}</strong> not verified</span>{{else}}<span>No check results available</span>{{end}}</p>
           <button class="copy-button" type="button" id="copy-report"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1" stroke="currentColor"/><path d="M10 3V2H2v9h1" stroke="currentColor"/></svg><span>Copy diagnostic</span></button>
         </div>
         {{if .GeneratedAt}}<p class="snapshot">Captured {{time .GeneratedAt}} · This report is a snapshot; rerun after changes.</p>{{end}}
