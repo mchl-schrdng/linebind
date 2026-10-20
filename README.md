@@ -16,10 +16,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mchl-schrdng/linebind/releases/latest"><img src="https://img.shields.io/github/v/release/mchl-schrdng/linebind?label=version&amp;logo=github&amp;color=5865F2" alt="Latest stable release"></a>
-  <a href="go.mod"><img src="https://img.shields.io/github/go-mod/go-version/mchl-schrdng/linebind?label=Go%20source&amp;logo=go&amp;logoColor=white&amp;color=5865F2" alt="Minimum Go version for building from source"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/mchl-schrdng/linebind?color=5865F2" alt="License"></a>
-  <a href="docs/installation.md"><img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-5865F2" alt="Release binaries for macOS, Linux and Windows"></a>
+  <a href="https://github.com/mchl-schrdng/linebind/releases/latest"><img src="https://img.shields.io/github/v/release/mchl-schrdng/linebind?label=version&amp;logo=github&amp;color=171830" alt="Latest stable release"></a>
+  <a href="go.mod"><img src="https://img.shields.io/github/go-mod/go-version/mchl-schrdng/linebind?label=Go%20source&amp;logo=go&amp;logoColor=white&amp;color=171830" alt="Minimum Go version for building from source"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/mchl-schrdng/linebind?color=171830" alt="License"></a>
+  <a href="docs/installation.md"><img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-171830" alt="Release binaries for macOS, Linux and Windows"></a>
 </p>
 
 <p align="center">
@@ -45,17 +45,10 @@ adds a GitHub App and shared PR reports, currently free during early access.
 It is optional; local checks and CI work without it.
 
 <p align="center">
-  <a href="docs/assets/report-v0.4.0/mac/line-mac.png">
-    <img src="docs/assets/report-v0.4.0/mac/line-mac.png" alt="The contract line in a Mac-style window on a vivid desktop: one required dependency rule crosses the boundary, four checks pass.">
-  </a>
+  <img src="docs/assets/mecha-line.webp" width="420" alt="Original Linebind illustration: an ivory mecha holds a taut coral line against a midnight-blue background.">
 </p>
 
-<p align="center"><sub>Four checks pass. One dependency crosses the boundary. Real v0.4.0 evidence in a Mac-style presentation. <a href="docs/assets/README.md">Capture notes</a></sub></p>
-
-In the HTML report, each mark represents a declared check. Select a mark to
-read its reason, evaluated rule, evidence and next step. Required failures rise
-above the line; advisory failures sit below it. Hollow marks mean verification
-is incomplete.
+<p align="center"><sub>Your repository. Your contract. <a href="docs/assets/README.md#official-identity">Original artwork and brand colors</a></sub></p>
 
 ## Get started
 
@@ -112,6 +105,19 @@ not a universal frontend recommendation.
 Remove an accidental dependency and rerun the check. If the project deliberately
 needs a new package, propose the dependency and contract change together. The
 report keeps that policy change visible for review.
+
+<p align="center">
+  <a href="docs/assets/report-v0.4.0/mac/line-mac.png">
+    <img src="docs/assets/report-v0.4.0/mac/line-mac.png" alt="The contract line in a Mac-style window on a vivid desktop: one required dependency rule crosses the boundary, four checks pass.">
+  </a>
+</p>
+
+<p align="center"><sub>Four checks pass. One dependency crosses the boundary. Real v0.4.0 evidence in a Mac-style presentation. <a href="docs/assets/README.md">Capture notes</a></sub></p>
+
+In the HTML report, each mark represents a declared check. Select a mark to
+read its reason, evaluated rule, evidence and next step. Required failures rise
+above the line; advisory failures sit below it. Hollow marks mean verification
+is incomplete.
 
 ## Keep related changes together
 

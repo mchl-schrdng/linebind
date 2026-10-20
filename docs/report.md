@@ -104,7 +104,10 @@ separate checks.
 
 The Linebind symbol and outlined wordmark in `docs/assets/` are original SVG
 artwork shipped under the repository license. They use no external font or
-third-party image. The report uses system fonts.
+third-party image. The report uses embedded Syne for its heading and wordmark,
+and system fonts for evidence. Its midnight-blue and coral frame matches
+Cloud; green, coral and amber still distinguish the check statuses.
+[Brand colors and artwork provenance](assets/README.md#official-identity)
 
 When adding a report image, capture an actual CLI-generated report and retain
 its JSON/HTML, invocation, source revision and input digest with the capture

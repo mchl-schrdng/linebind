@@ -1,5 +1,32 @@
 # Product visuals and evidence
 
+## Official identity
+
+Linebind's signature colors are midnight blue `#0d1024` and coral orange
+`#d65c46`. Use dark ink `#171830` for text on light surfaces, dark coral
+`#b94232` for readable accents on white, and light coral `#ed8c75` on navy.
+The CLI's HTML report keeps a light reading surface and distinct green, coral
+and amber statuses. Brand colors never stand in for a passing check.
+
+The report embeds Syne for headings and the wordmark; evidence uses system
+sans-serif and monospace fonts. Its Latin variable WOFF2 is the same asset as
+Cloud's, downloaded from [Fontsource](https://cdn.jsdelivr.net/fontsource/fonts/syne:vf@latest/latin-wght-normal.woff2)
+on 20 October 2026. The [SIL Open Font License](../../internal/report/fonts/OFL.txt)
+is bundled in every generated report. Reports make no font or image request.
+
+The README's [mecha](mecha-line.webp) is original decorative artwork, generated
+with the built-in Imagegen tool on 20 October 2026 and shared with Linebind
+Cloud. The WebP is 1122 × 1402 pixels. Its ivory machine holds a single coral
+line against midnight blue; it illustrates the product's boundary motif.
+It is not a product screenshot or evidence of a check. The approved direction
+uses polished manga and mecha illustration, with an Evangelion influence but
+no existing character or unit. The source generation remains in the owner's
+image library. [Full generation prompt](mecha-prompt.md)
+
+The README keeps the measured v0.4.0 screenshots below as historical examples.
+Their original appearance and recorded evidence are unchanged; the current
+source template uses the new identity and will ship in the next CLI release.
+
 ## README visuals — v0.4.0
 
 The README presents real Linebind evidence in four **Mac-style compositions**.
