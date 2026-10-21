@@ -44,7 +44,7 @@ func runCommand(rule contract.Rule, candidate, base *repository.Snapshot, allow 
 		return fail("Project command was not executed. Use --allow-exec only for a trusted project or inside the documented isolated CI environment.")
 	}
 	if len(candidate.Omitted) > 0 {
-		return fail("Command input snapshot is incomplete (symlink, submodule, LFS pointer or oversized file).")
+		return fail("Command was not executed: input snapshot is incomplete. Commands require the whole captured repository; narrowing scope does not exclude omitted inputs.")
 	}
 	temp, err := os.MkdirTemp("", "linebind-run-")
 	if err != nil {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -143,6 +144,63 @@ rules:
 		t.Fatalf("missing executable passed: %+v", r)
 	}
 }
+func TestCommandReportsOutOfScopeOmissionsBeforeExecutableLookup(t *testing.T) {
+	policy := `version: 1
+name: external
+rules:
+  - id: tool
+    kind: command
+    reason: Check with the approved tool.
+    scope: [src/*.txt]
+    command:
+      argv: [definitely-missing-linebind-test-tool]
+`
+	dir, opt := checkRepo(t, policy, "okay\n")
+	opt.AllowExec = true
+	put(t, dir, "docs/pointer.dat", "version https://git-lfs.github.com/spec/v1\noid sha256:abc\nsize 1\n")
+	for _, evaluate := range []func(Options) model.Report{Check, Preview} {
+		r := evaluate(opt)
+		if r.ExitCode != 2 || len(r.Checks) != 1 || r.Checks[0].Status != "unverified" {
+			t.Fatalf("incomplete command snapshot accepted: %+v", r)
+		}
+		diagnostics := strings.Join(r.Checks[0].Diagnostics, "\n")
+		for _, want := range []string{"Command was not executed", "whole captured repository", `"docs/pointer.dat": Git LFS pointer`} {
+			if !strings.Contains(diagnostics, want) {
+				t.Fatalf("missing %q in diagnostics: %s", want, diagnostics)
+			}
+		}
+		if strings.Contains(diagnostics, "Could not execute command") {
+			t.Fatalf("executable lookup preceded snapshot validation: %s", diagnostics)
+		}
+	}
+	if err := os.Remove(filepath.Join(dir, "docs/pointer.dat")); err != nil {
+		t.Fatal(err)
+	}
+	r := Check(opt)
+	if r.ExitCode != 2 || !strings.Contains(strings.Join(r.Checks[0].Diagnostics, "\n"), "Could not execute command") {
+		t.Fatalf("complete snapshot did not reach executable lookup: %+v", r)
+	}
+}
+
+func TestCommandOmissionDiagnosticsAreSortedBoundedAndQuoted(t *testing.T) {
+	rule := contract.Rule{Kind: "command", Scope: []string{"src/**"}}
+	s := &repository.Snapshot{Omitted: map[string]string{}}
+	for i := 24; i >= 0; i-- {
+		s.Omitted[fmt.Sprintf("docs/%02d\n.dat", i)] = "symlinks and submodules are not inspected"
+	}
+	c := model.Check{Status: "unverified"}
+	markOmissions(rule, s, &c)
+	if len(c.Diagnostics) != 21 || c.Diagnostics[20] != "5 more omitted paths are not listed." {
+		t.Fatalf("omissions not bounded with an accurate remainder: %+v", c)
+	}
+	for i, diagnostic := range c.Diagnostics[:20] {
+		want := fmt.Sprintf("%q: %s", fmt.Sprintf("docs/%02d\n.dat", i), "symlinks and submodules are not inspected")
+		if diagnostic != want {
+			t.Fatalf("omission order or quoting lost: got %q, want %q", diagnostic, want)
+		}
+	}
+}
+
 func TestOmittedDirectoryCannotHideScopedSources(t *testing.T) {
 	rule := contract.Rule{Scope: []string{"src/**/*.txt"}}
 	c := model.Check{Status: "passed"}

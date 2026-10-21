@@ -182,7 +182,10 @@ Use a separate required compiler or syntax check for that evidence.
 Symlinks, submodules, special files, Git LFS pointers and oversized files are
 not inspected as source contents. Omissions are recorded and affect checks
 whose declared scope includes them. Command execution requires a complete
-source snapshot and refuses a snapshot containing such omissions. Aggregate
+source snapshot and refuses a snapshot containing such omissions, even outside
+the command's scope. Its diagnostics list the first 20 omitted paths in sorted
+order with their capture reasons and count any remaining omissions. The command
+has not run, so this does not establish that its executable is missing. Aggregate
 capture limits can prevent the whole analysis from running.
 
 The snapshot limits apply to the captured repository, including files outside
