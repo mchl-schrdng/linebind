@@ -40,9 +40,14 @@ for review; `preview` lets you evaluate them before adoption.
 
 The CLI is **free and MIT-licensed**. Native checks need only Linebind and Git:
 no account, dependency installation or model API. Results are available in the
-terminal, JSON and an offline HTML report. [Linebind Cloud](https://linebind-cloud.vercel.app/)
-adds a GitHub App and shared PR reports, currently free during early access.
-It is optional; local checks and CI work without it.
+terminal, JSON and an offline HTML report.
+
+The bundled [agent skill](#with-your-coding-agent) guides your coding agent from
+project decisions to a verifiable contract, then through repairs and deliberate
+rule changes. The CLI performs the checks; the skill helps the agent use their
+evidence. [Linebind Cloud](https://linebind-cloud.vercel.app/) adds a GitHub App
+and shared PR reports with a Free Marketplace plan. Local checks and the skill
+work without a Cloud account.
 
 <p align="center">
   <img src="docs/assets/mecha-banner.webp" width="100%" alt="Original panoramic Linebind illustration: an ivory mecha and its articulated hand hold a coral line across a midnight-blue background.">
@@ -207,6 +212,25 @@ when adopting newer rules.
 
 ## With your coding agent
 
+Turn a decision from your conversation into a rule the next change can check.
+The bundled skill gives your existing coding agent a workflow for three tasks:
+
+- **Create a contract.** Start from decisions you have actually made, explain
+  what each rule protects, and demonstrate a violation in an isolated fixture.
+  Subjective goals without a meaningful verifier stay in human review.
+- **Develop within it.** Run the checks, read their findings, and repair
+  unintended deviations in the code. The instructions explicitly forbid
+  weakening a rule just to make a check pass.
+- **Evolve a decision.** When you authorize a change, prepare the code and
+  contract together. Keep the old-policy result and proposed preview visible
+  for the repository's review and adoption process.
+
+For example, if the contract permits React and React DOM, adding Zod is a
+reported deviation. The skill guides a repair if that addition was accidental,
+or a narrow contract proposal if you have decided to adopt Zod.
+
+After installing the CLI, run this in your project:
+
 ```sh
 linebind setup --agent all
 ```
@@ -215,11 +239,19 @@ Install the bundled skill for **Codex, Claude Code and Antigravity**, or select
 one with `--agent codex`, `claude` or `antigravity`. Add `--dry-run` to inspect
 the changes first.
 
-The skill helps your agent prepare a contract from explicit project decisions,
-check changes and explain policy proposals. Installation is offline, preserves
-existing instructions, and does not create or approve a contract.
+Installation copies the bundled instructions into the repository, offline,
+and preserves existing guidance. It does not create or approve a contract.
+Reload skills or start a new agent session if needed, then ask:
 
-[Agent setup and workflow](docs/agents.md)
+> Prepare a Linebind contract from our documented decisions. Explain what each
+> rule protects and what remains unchecked. Demonstrate a permitted change and
+> a violation in an isolated fixture.
+
+Linebind adds no model account or API key. The skill guides the agent; the CLI
+evaluates declared checks, and CI can run them independently. Installing a skill
+does not guarantee that an agent session loads or follows it.
+
+[Agent setup, everyday workflow and compatibility limits](docs/agents.md)
 
 ## Read the result correctly
 
