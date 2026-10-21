@@ -30,11 +30,15 @@ semantic checks with regexes.
 
 ```yaml
 version: 1
-name: Frontend decisions
+name: Frontend declared runtime packages
 rules:
-  - id: frontend.runtime-packages
+  - id: frontend.runtime-declarations
     kind: dependencies
-    reason: New browser runtime packages require a separate project decision.
+    reason: >-
+      New browser runtime package declarations require a separate project decision.
+      Checks dependencies, optionalDependencies and peerDependencies in the root
+      package.json; development declarations, other manifests and source imports
+      are outside this rule.
     scope: [package.json]
     dependencies:
       format: npm
