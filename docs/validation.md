@@ -110,9 +110,9 @@ Four trials used fresh independent agent contexts; the routine repair used
 Codex CLI `0.155.0-alpha.16.4` with its workspace sandbox. The native Claude Code
 `2.1.296` attempt stopped before executing the task because its OAuth session
 had expired. No successful Claude runtime trial is claimed. Antigravity was not
-executed. Its and Claude's installation layouts follow the linked official
-documentation in [Working with coding agents](agents.md); filesystem tests do
-not prove runtime discovery in those clients.
+executed in these October 15 trials. Its and Claude's installation layouts
+follow the linked official documentation in [Working with coding agents](agents.md);
+filesystem tests do not prove runtime discovery in those clients.
 
 The implementation checks cover offline setup, dry runs, preserved instructions,
 conflicts before writes, symlinks, repeat installation and a Git checkout with
@@ -132,6 +132,48 @@ native scenarios and six actual SQLite scenarios passed during preparation.
 The automated checks run in CI; interactive agent behavior is documented here
 as a bounded manual experiment and is not an automated compatibility suite.
 No real-browser rendering or accessibility validation was added.
+
+## First-contract counterexamples (2026-10-21)
+
+Codex and Gemini (Antigravity, Gemini 3.8 Flash High) independently used the
+published v0.5.0 skill on isolated copies of
+[Zod at `afdac65e0f80c0ccf9e8909da97c411567908b57`](https://github.com/colinhacks/zod/tree/afdac65e0f80c0ccf9e8909da97c411567908b57).
+The SHA was a comparison baseline, not a policy adopted by Zod. These were
+deliberate mutations on a real repository, not discovered upstream defects.
+
+The first Gemini contract omitted optional and peer dependency declarations,
+used `compare: new` to retain lexical logging false positives, and froze the
+current version instead of verifying release authorization. Cross-review
+reproduced the gaps. A separate repair fixture preserved the requested manifest
+description, removed an accidental dependency and left the policy unchanged. This
+supports the bounded repair workflow, not the quality of every generated rule.
+
+Those failures inform the revised authoring guidance: test permitted, direct,
+indirect, missing-input and new-path cases for each rule; report what each check
+actually observes; do not hide verifier mistakes as baseline debt. Skill syntax
+and installation tests alone cannot establish that agents follow this guidance.
+
+A fresh Antigravity conversation used the revised skill without the earlier
+reports. It produced two native rules without a version freeze or lexical
+logging rule, but still omitted peer dependencies. Independent mutations also
+showed that deleting one of several scoped manifests could leave the document
+check green. This prompted explicit category-by-category probes, a distinction
+between scope and required-file presence, and retention of actual mutation diffs
+and reports. The dependency example was separately exercised: development tools
+passed, prohibited normal/optional/peer declarations failed, and undeclared
+imports and new workspaces outside its scope remained explicitly unprotected.
+The follow-up correction was guided by these findings; it was not a blind trial
+or evidence of a causal improvement from the skill alone.
+
+The command diagnostic was also reproduced on the unchanged Zod symlinks. With
+`/usr/bin/true` and `scope: [package.json]`, v0.5.0 returned a generic incomplete
+snapshot error. The revised CLI names `.codex/skills`, `.cursorrules`, `CLAUDE.md`
+and `README.md` with capture reasons. Both return exit 2 before execution. No
+links were removed to obtain a pass. Automated regressions cover out-of-scope
+omissions in check/preview, diagnostic ordering, quoting and the list limit.
+
+No full Zod build or test suite, controlled A/B study, production adoption or
+advantage over its existing CI was established.
 
 ## v0.1.0
 

@@ -38,6 +38,10 @@ The root needs `version: 1`, a nonempty `name`, and 1–256 rules. Each rule nee
 a stable unique `id`, `kind`, `reason`, and its matching configuration block.
 `scope` contains repository-relative globs and is required except for
 `require-files`. Use `/` separators and no absolute paths or `..` traversal.
+Scope selects captured files; it does not require each listed path to exist.
+With several manifests, deleting one can leave a document rule green. If those
+inputs are mandatory, pair the value check with `require-files`; otherwise state
+that file presence is outside the promise.
 The parser rejects unknown fields, duplicate keys, YAML aliases, anchors, and
 custom tags. `reason` and `remediation` explain a rule; neither is executable.
 
@@ -135,11 +139,14 @@ This checks declarations, not versions, vulnerabilities, lockfile integrity,
 or the resolved transitive graph. Go checks direct `require` entries; local
 replacements can leave identity unverified. npm non-registry sources can also
 leave identity unverified. Do not promise more than the manifest evidence.
-For a promise such as no external runtime packages, consider optional and peer
-declarations and each relevant workspace manifest. An undeclared import or a
-development dependency imported by shipped code is outside this verifier's
-coverage. Use an existing import/build check for that evidence, or report the
-narrower declaration-only protection explicitly.
+For a decision such as no external runtime packages, cover `dependencies`,
+`optionalDependencies` and `peerDependencies` in each relevant npm manifest.
+Exclude a category only when the documented decision justifies it, not because
+it is empty today. Probe each covered category; one alternate dependency test
+does not establish coverage of the others. An undeclared import or a development
+dependency imported by shipped code is outside this verifier's coverage. Use an
+existing import/build check for that evidence, or report the narrower
+declaration-only protection explicitly.
 
 ### JSON/YAML values
 
@@ -213,8 +220,10 @@ each rule, state the expected outcomes before making independent mutations:
 
 Use a disposable Git fixture or copy; preserve the real repository's source and
 approval state. Restore each mutation before the next probe and re-run the final
-proposal. Retain a compact record of the mutation, expected and observed result,
-and remaining coverage limits. A missed promised violation or a blocked permitted
+proposal. Retain each mutation's diff, command, expected outcome and actual
+report. Distinguish executed probes from known but untested limitations; do not
+combine an executed change and a hypothetical variant in one result row.
+A missed promised violation or a blocked permitted
 change calls for a better verifier, a narrower honest promise, or a human review
 criterion. Do not relabel a failed probe to claim success. For `compare: new`,
 exercise both accepted existing debt and an additional real violation.

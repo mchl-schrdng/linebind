@@ -209,10 +209,13 @@ Supported directory layouts and CLI behavior can be tested deterministically;
 an installed file does not prove that a particular agent session loaded or
 followed it. Agent settings, version, permissions and environment still matter.
 
-A real Codex CLI trial loaded the skill and repaired a deviation. The Claude
-Code trial stopped on expired authentication before execution; Antigravity
-runtime discovery has not been exercised. See the [validation record](validation.md#agent-workflow-v020)
-for the five controlled workflow trials and the exact limits of these results.
+A real Codex CLI trial loaded the skill and repaired a deviation. A later
+Antigravity trial with Gemini loaded the installed skill on Zod, authored a
+contract and repaired an accidental dependency in a separate fixture. The Claude
+Code trial stopped on expired authentication before execution. See the
+[workflow trials](validation.md#agent-workflow-v020) and
+[Zod counterexamples](validation.md#first-contract-counterexamples-2026-10-21)
+for the observed behavior and limits; none establishes universal agent compliance.
 
 The skill source lives in
 [`internal/agentsetup/skill`](../internal/agentsetup/skill/).
