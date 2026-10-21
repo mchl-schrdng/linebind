@@ -14,9 +14,9 @@ CLI, use the [disposable walkthrough](../docs/try-it.md).
 | [dependency-cruiser](dependency-cruiser/README.md) | Enforce declared module boundaries with a specialist tool | Requires the external tool and execution opt-in |
 | [Conftest](conftest/README.md) | Evaluate declared infrastructure policy | Requires the external tool and execution opt-in |
 
-For a controlled mutation of a real Go project, see
-[Chi: passing tests, a changed dependency decision](chi/README.md). It also
-demonstrates a case that Linebind misses and `go mod tidy` catches.
+For a standalone Go demonstration, see
+[Passing tests, a changed dependency decision](dependency-policy/README.md).
+It also demonstrates a case that Linebind misses and `go mod tidy` catches.
 
 ## Run the suite
 

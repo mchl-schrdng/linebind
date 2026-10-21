@@ -42,8 +42,9 @@ Linebind does not generally detect that kind of evaluator tampering. It tackles
 a narrower question: **which project decisions can we make explicit and check
 on the next change?**
 
-Take one decision: **no external dependencies.** In a controlled test on a
-disposable Go project, we deliberately added and imported an external package.
+Take one decision: **no dependencies outside the root module.** In a controlled
+test on a small synthetic Go project, we deliberately added and imported a
+separate local module.
 The existing tests and module consistency check stayed green. A proposed
 contract with an empty direct-dependency allowlist reported the change.
 
@@ -51,19 +52,24 @@ contract with an empty direct-dependency allowlist reported the change.
 | --- | --- |
 | `go test -mod=readonly -count=1 ./...` | Passed |
 | `go mod tidy -diff` | Passed |
-| `linebind preview` with our proposed dependency rule | **Crossed** |
+| `linebind preview` with our proposed dependency rule | **Not verified** — new requirement reported; local replacement unverified |
 
 **The code compiled and the existing tests passed.
 The dependency still crossed a project boundary.**
 Our rule checked direct declarations in the root `go.mod` against an empty
 allowlist. It does not inspect imports or the complete dependency graph.
-**[Inspect the test method, including a case this rule misses](examples/chi/README.md).**
+**[Inspect the test method, including a case this rule misses](examples/dependency-policy/README.md).**
 
-The **skill** helps your coding agent turn a decision into a contract: the rule,
-its reason, its exact scope and its limits. The **CLI** checks the repository
-against that contract and reports the evidence. After adoption, `check` uses
-the contract from your selected trusted base, so editing the candidate's rules
-does not silently redefine that check.
+**The skill guides the agent. The contract makes selected constraints testable.**
+The skill helps the agent define a rule, its reason, scope and limits, then act
+on findings without weakening the rule to finish the task. The CLI checks the
+result independently of the agent's account of its work.
+
+To enforce adopted constraints at merge time, make `check` a required CI gate
+against a trusted base. It uses that base's contract, so editing the candidate's
+rules does not silently redefine the check. The base, verifier and CI invocation
+must themselves remain under trusted control. `preview` evaluates proposed
+rules; it does not approve them. [Enforcement and its limits](docs/trust-model.md).
 
 Keep your tests, linters and review. Linebind checks the decisions you encode;
 it does not infer all the decisions your project needs.
