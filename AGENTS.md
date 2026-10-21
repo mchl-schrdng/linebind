@@ -16,5 +16,5 @@ The maintainer adopts the proposal by merging after all required CI checks pass.
 
 Never merge with failed or pending required CI, use an administrative bypass,
 or disable protections to finish a task. No second reviewer is required.
-Run relevant Go tests separately. See [our contract](docs/self-contract.md)
+Run relevant Go tests separately. See [our contract](CONTRIBUTING.md#repository-contract)
 and [CI integration](docs/ci.md) for scope and adoption.

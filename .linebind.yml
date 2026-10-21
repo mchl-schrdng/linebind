@@ -6,7 +6,7 @@ rules:
     reason: Contributors need product, licensing, configuration, security and contract-workflow documentation.
     remediation: Restore the missing public document or propose a reviewed contract update.
     files:
-      require: [README.md, LICENSE, SECURITY.md, docs/configuration.md, docs/trust-model.md, docs/agents.md, docs/self-contract.md]
+      require: [README.md, LICENSE, SECURITY.md, CONTRIBUTING.md, docs/configuration.md, docs/trust-model.md, docs/agents.md]
   - id: deliberate-direct-dependencies
     kind: dependencies
     reason: Keep the native verifier small and its direct dependencies explicit.
