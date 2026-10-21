@@ -208,15 +208,24 @@ func markOmissions(rule contract.Rule, s *repository.Snapshot, c *model.Check) {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	for _, name := range names {
-		if !omissionMatches(name, s.Omitted[name], patterns) {
+	for i, name := range names {
+		// Commands need the whole snapshot, even when an omission is out of scope.
+		if rule.Kind == "command" && i == 20 {
+			c.Diagnostics = append(c.Diagnostics, fmt.Sprintf("%d more omitted paths are not listed.", len(names)-i))
+			break
+		}
+		if rule.Kind != "command" && !omissionMatches(name, s.Omitted[name], patterns) {
 			continue
 		}
 		if rule.Files != nil && len(rule.Scope) > 0 && !omissionMatches(name, s.Omitted[name], rule.Scope) {
 			continue
 		}
 		c.Status = "unverified"
-		c.Diagnostics = append(c.Diagnostics, fmt.Sprintf("%s: %s", name, s.Omitted[name]))
+		path := name
+		if rule.Kind == "command" {
+			path = fmt.Sprintf("%q", name)
+		}
+		c.Diagnostics = append(c.Diagnostics, fmt.Sprintf("%s: %s", path, s.Omitted[name]))
 	}
 }
 

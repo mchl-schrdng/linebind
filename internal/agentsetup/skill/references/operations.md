@@ -129,6 +129,13 @@ authorization; otherwise obtain the needed permission without re-asking for
 authorization already given. Preview executes candidate policy when enabled.
 The disposable copy is **not a sandbox**: commands retain host permissions.
 
+Commands need a complete captured repository, including files outside their
+declared `scope`. If a diagnostic reports an incomplete snapshot, inspect the
+named omissions and their reasons before investigating the executable. The
+command has not run; narrowing its scope does not fix the capture. Do not remove
+legitimate symlinks or make the rule advisory merely to obtain a pass. Report
+the blocked command separately from any native checks that completed.
+
 Missing tools, timeouts, invalid output, or unsupported inputs remain unverified.
 Do not silently make a command optional to get green. Use the repository's
 documented isolated environment for untrusted command execution. Linebind does
