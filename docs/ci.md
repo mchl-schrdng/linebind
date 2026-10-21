@@ -23,34 +23,13 @@ designed isolated execution environment before enabling those rules;
 
 ## Install with the setup Action
 
-The repository now includes a composite setup Action. On a Linux x64 runner,
-replace the download/checksum/extract step with:
+The Linux x64 setup Action downloads a published verifier, checks its pinned
+SHA-256 before extraction/execution, adds it to `PATH` and exposes an absolute
+`binary` output. Pin the Action source independently of the installed CLI.
+Supply both `version` and its reviewed `sha256` when selecting another release;
+there is no automatic `latest` update.
 
-```yaml
-- name: Install the published verifier
-  uses: mchl-schrdng/linebind@7a721b149c7f37a9458b876d8280a7bbad2db766 # reviewed Action source
-  with:
-    version: v0.5.0
-    sha256: eaa31c3379a9031c6d2178125bb341b591600f6b150e19d8e6bde50c831cb1dc
-```
-
-The example installs v0.5.0, verifies the archive against its pinned
-SHA-256 before extracting or executing it, and adds `linebind` to `PATH`.
-It also exposes an absolute `binary` output. It does not build the candidate,
-install project dependencies, choose a base, change the checkout or execute
-command rules. Keep the base/head selection, native check, artifact retention
-and required-check settings from the full workflow above. For another published
-release, supply both `version: vX.Y.Z` and its independently reviewed `sha256`.
-A wrong checksum fails closed; there is no automatic `latest` update.
-
-Pin the Action source independently of the CLI release it installs. The
-examples supply both inputs because that immutable Action revision predates
-the default-version update. The Action on `main` and this repository's contract
-gate now default to v0.5.0; older pinned Action revisions retain their defaults.
-Python/Cargo formats and the document predicates require CLI v0.4.0 or newer.
-The native `co-change` rule requires v0.5.0 or newer.
-
-For example, after the existing base checkout and candidate-fetch steps:
+After the base checkout and candidate-fetch steps from the full workflow:
 
 ```yaml
 - uses: mchl-schrdng/linebind@7a721b149c7f37a9458b876d8280a7bbad2db766 # reviewed Action source
@@ -75,20 +54,9 @@ initial Action deliberately targets the runner used by the existing PR gate.
 
 ## The command and its evidence
 
-The workflow runs this command with full SHAs supplied by the PR event:
-
-```bash
-mkdir -p "$RUNNER_TEMP/linebind-report"
-set -o pipefail
-"$RUNNER_TEMP/linebind-bin/linebind" preview \
-  --repo "$GITHUB_WORKSPACE" \
-  --base "$BASE_SHA" --head "$HEAD_SHA" \
-  --format json --html "$RUNNER_TEMP/linebind-report/report.html" \
-  | tee "$RUNNER_TEMP/linebind-report/result.json"
-```
-
-JSON is visible in the job log and saved beside the standalone HTML report.
-`pipefail` preserves a failing exit through `tee`; there is no success fallback.
+Use full base/head SHAs from the PR event. Preserve the command's exit status;
+if piping through `tee`, enable `pipefail`. The repository workflow saves JSON
+and standalone HTML together.
 
 | Exit | Effect on this job |
 | --- | --- |
@@ -159,67 +127,23 @@ Teams that intentionally want to freeze the adopted policy can instead require
 policy edits remain blocked. Neither command implements approval labels or a
 local approval flag. See [the trust model](trust-model.md#evolving-the-contract).
 
-## Gate a frontend build
+## Builds, deployment and merge queues
 
-To prevent a build from starting when the contract fails, place the build job
-in the **same workflow** and give it `needs: contract`. For a Node frontend
-with a committed npm lockfile and a `build` script, add this under `jobs:`:
+A build job in the same workflow can use `needs: contract` to wait for the gate.
+A similarly named job in another workflow does not create that dependency.
+Builds execute candidate code and belong on disposable runners without
+deployment secrets; the supplied Linebind gate remains native-only.
 
-```yaml
-  build:
-    needs: contract
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '24'
-          package-manager-cache: false
-      - run: npm ci
-      - run: npm run build
-```
+Keep deployment in your trusted-branch pipeline, verify its exact revision and
+make deployment depend on verification and the build. This PR workflow does not
+validate a later merge commit or authorize production deployment. Configure any
+required environment approvals in repository settings.
 
-This separate build job intentionally executes candidate code, including npm
-lifecycle scripts. Keep it on a disposable runner without deployment secrets.
-The Linebind job itself remains native-only. A job in a different workflow does
-not wait for this one merely because it has a similar name. GitHub's
-[`needs` behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idneeds)
-is the dependency that makes this example a build gate.
-
-## Connect it to deployment
-
-Keep production deployment in your existing trusted-branch pipeline. Require
-the PR checks before merging, then verify the exact revision you will deploy
-and make the deployment job depend on that verification and its build. Choose
-the comparison revision and contract source explicitly there too. `preview`
-validates the deploy candidate's policy; `check` enforces the selected base's policy. This PR workflow does not
-itself validate a later merge commit or authorize a deployment.
-
-For a deployment workflow that already has jobs named `contract`, `build` and
-`deploy`, the relevant wiring is:
-
-```yaml
-  deploy:
-    needs: [contract, build]
-    environment: production
-    # Keep the existing runs-on, permissions and deployment steps here.
-```
-
-This fragment is wiring, not a runnable deployment recipe: the deployment target,
-credentials and approved production base belong to your project. Configure any
-required approval on the `production` environment in repository settings; the
-name alone does not create an approval rule. See GitHub's
-[deployment controls](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments).
-
-The supplied workflow evaluates the PR head against the base SHA recorded in
-that event, not a synthetic merge result. Require the branch to be up to date
-and obtain a fresh run when the base changes. There are no path filters that
-silently omit documentation-only PRs. Merge queues need a separately implemented
-and tested `merge_group` trigger and candidate/base selection; this PR-only
-example is insufficient as their sole required check. GitHub explains that
-additional event under
-[`merge_group`](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#merge_group).
+The gate evaluates the event's PR head/base pair, not a synthetic merge result.
+Require the branch to be up to date and obtain a fresh run when the base changes.
+Merge queues need a separately implemented and tested `merge_group` trigger and
+revision selection; this PR-only example is insufficient as their sole required
+check. See GitHub's
+[`needs`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idneeds)
+and [`merge_group`](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#merge_group)
+references.

@@ -122,24 +122,6 @@ read its reason, evaluated rule, evidence and next step. Required failures rise
 above the line; advisory failures sit below it. Hollow marks mean verification
 is incomplete.
 
-## Keep related changes together
-
-New in v0.5.0: a `co-change` rule can require migration notes when SQL changes.
-Add this rule to your contract:
-
-```yaml
-- id: migration-guide
-  kind: co-change
-  reason: Ship migration instructions with schema changes.
-  scope: [migrations/**]
-  co-change:
-    require: [docs/migrations.md]
-```
-
-Changing a migration without adding or updating the guide crosses the check.
-Deleting the guide does not satisfy it. This verifies an accompanying edit,
-not its quality; a whitespace edit counts. [Runnable example](examples/co-change/README.md)
-
 ## What can a contract check?
 
 | Rule | Example decision | What it checks |
@@ -189,26 +171,19 @@ never approves it. [Example report](docs/assets/report-v0.4.0/mac/preview-mac.pn
 
 ## Tested in CI
 
-[CI](.github/workflows/ci.yml) runs Go tests and vet on Linux, macOS and
-Windows, verifies six release archives, exercises installed binaries and
-examples, and checks real tool adapters and report interactions.
-[Tagged releases](.github/workflows/release.yml) run that suite before publishing.
-[CodeQL](.github/workflows/codeql.yml) adds static analysis; a successful run
-is not a guarantee that no security issue exists.
+[CI](.github/workflows/ci.yml) runs Go tests and vet on Linux, macOS and Windows,
+checks release archives and installed binaries, and exercises examples, real
+adapters and report interactions. [Release](.github/workflows/release.yml)
+reuses that suite; [CodeQL](.github/workflows/codeql.yml) analyzes Go code.
 
-This repository's [contract check](.github/workflows/contract.yml) uses `preview`
-with explicit PR base/head SHAs and a checksum-pinned released verifier. Valid
-policy edits can pass proposal validation; required violations and incomplete
-checks fail. The repository's required CI must pass before merging.
+The [repository contract gate](.github/workflows/contract.yml) uses `preview`
+with explicit PR SHAs and a checksum-pinned released verifier. Required checks
+must pass before merging. [Contributor checks and workflow roles](CONTRIBUTING.md#ci-and-merging)
 
-The setup Action supports Linux x64. Its default verifier and this repository's
-contract gate are independently pinned to **v0.5.0**; they do not automatically
-track the latest release. Select a version and matching checksum explicitly
-when adopting newer rules.
-
-[Set up the GitHub Action](docs/ci.md#install-with-the-setup-action) ·
-[Choose the CI mode and required checks](docs/ci.md) ·
-[Read this repository's contract](docs/self-contract.md)
+The Linux x64 setup Action and contract gate are independently pinned to
+**v0.5.0**. Select a version and matching checksum explicitly when upgrading.
+[Set up the Action](docs/ci.md#install-with-the-setup-action) ·
+[Our own contract](CONTRIBUTING.md#repository-contract)
 
 ## With your coding agent
 
@@ -255,28 +230,17 @@ does not guarantee that an agent session loads or follows it.
 
 ## Read the result correctly
 
-| Status | Meaning |
-| --- | --- |
-| `passed` | The declared check passed under its comparison mode |
-| `crossed` | A violation or configured failure outcome was found |
-| `unverified` | A complete result could not be established |
-
-Required results control the exit: **`0`** passes, **`1`** reports a required
-violation, and **`2`** reports incomplete required verification or an invalid
-operation. `check` also returns `1` for policy changes; `preview` does not fail
-on policy changes alone. Advisory findings remain visible without failing the
-command. If a required violation and incomplete verification coexist, the exit
-is `1`.
-
-A passing result covers the declared checks and captured inputs. It does not
-certify the whole repository. [Report guide](docs/report.md) ·
-[Trust model and limits](docs/trust-model.md)
+`passed` covers the declared check; `crossed` reports a violation; `unverified`
+means a complete result could not be established. Required results control the
+exit status. A green result does not certify the whole repository.
+[Exit codes](docs/configuration.md#status-and-command-line-reference) ·
+[Report guide](docs/report.md) · [Trust model](docs/trust-model.md)
 
 ## Documentation and contributing
 
 [Installation](docs/installation.md) · [Walkthrough](docs/try-it.md) ·
-[Configuration](docs/configuration.md) · [Examples](docs/examples.md) ·
-[CI integration](docs/ci.md) · [Validation](docs/validation.md) ·
+[Configuration](docs/configuration.md) · [Examples](examples/README.md) ·
+[CI integration](docs/ci.md) ·
 [Contributing](CONTRIBUTING.md)
 
 The CLI is written in Go. Run `go test ./...` and `go vet ./...` for local

@@ -322,7 +322,7 @@ Dependency-cruiser can recover from syntax errors without reporting them.
 A passed graph check therefore establishes only the declared rules over the
 graph it returned. Keep a separate required compiler or syntax check, such as
 `tsc --noEmit` or `node --check`, when syntax validity matters to the decision.
-See the [examples](examples.md) and [trust model](trust-model.md#command-execution)
+See the [examples](../examples/README.md) and [trust model](trust-model.md#command-execution)
 for the execution boundary.
 Runnable recipes are provided for [dependency-cruiser](../examples/dependency-cruiser/README.md)
 and [Conftest](../examples/conftest/README.md).
