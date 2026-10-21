@@ -36,8 +36,10 @@ that the user or project has actually established. Existing files and packages
 are evidence of implementation, not automatic decisions to freeze forever.
 Keep intentions without a meaningful verifier as review criteria.
 
-Create the contract, explain each rule's reason and coverage, then validate
-and preview it. For each rule, exercise a permitted change, a direct violation
+Write each rule's actual coverage and material exclusions into the contract
+itself, following the authoring reference. Identify which existing tools cover
+complementary properties and which gaps remain. Then validate and preview the
+contract. For each rule, exercise a permitted change, a direct violation
 and a realistic indirect variant in a disposable fixture. Probe missing inputs
 and new files that could escape its scope. Report expected and observed results
 and what remains unprotected; a green baseline alone does not validate a rule.

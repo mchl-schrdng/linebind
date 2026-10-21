@@ -7,9 +7,24 @@ subjective design and unspecified architectural intent in human review until
 there is a meaningful observable criterion.
 
 Name the evidence source, the property the verifier actually observes, and the
-files or dependency categories it covers. A release process reserving version
-changes for maintainers does not establish a decision to freeze today's version;
-a scalar equality cannot verify who authorized a change.
+files or dependency categories it covers. Keep the contract's `name` and rule
+IDs consistent with that coverage. In each `reason`, connect the project
+decision to the narrower check and state material exclusions; do not leave
+those limits only in the final report. For example, a rule inspecting direct
+requirements in the root `go.mod` must not promise repository-wide absence of
+external dependencies.
+
+A release process reserving version changes for maintainers does not establish
+a decision to freeze today's version; a scalar equality cannot verify who
+authorized a change.
+
+Inspect existing CI, tests, linters and build checks before adding a verifier.
+Explain which property each check establishes, distinguishing checks already
+configured or executed from recommendations. Keep useful existing checks; a
+passing Linebind result does not replace them. Use a `command` rule when it
+meaningfully connects an existing verifier to the contract, not simply to wrap
+every CI step. Leave remaining gaps explicit instead of approximating syntax or
+semantic checks with regexes.
 
 ## Contract shape
 
@@ -136,9 +151,17 @@ metadata and Cargo workspace inheritance remain unverified, as do non-registry
 sources; neither format executes packaging tools or resolves a graph.
 
 This checks declarations, not versions, vulnerabilities, lockfile integrity,
-or the resolved transitive graph. Go checks direct `require` entries; local
-replacements can leave identity unverified. npm non-registry sources can also
-leave identity unverified. Do not promise more than the manifest evidence.
+or the resolved transitive graph. Go checks direct `require` entries and skips
+entries marked `// indirect`; local replacements can leave identity unverified.
+A root-only scope does not cover separate nested modules. For Go projects,
+`go mod tidy -diff` can detect a used dependency incorrectly marked indirect,
+while build and test commands provide import and behavior evidence. These
+checks can still pass with a correctly declared external dependency: they do
+not enforce a project's dependency allowlist. Report their results separately
+from Linebind's declaration check and retain any remaining coverage limits.
+
+npm non-registry sources can also leave identity unverified. Do not promise
+more than the manifest evidence.
 For a decision such as no external runtime packages, cover `dependencies`,
 `optionalDependencies` and `peerDependencies` in each relevant npm manifest.
 Exclude a category only when the documented decision justifies it, not because
