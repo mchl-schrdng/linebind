@@ -4,22 +4,21 @@ Linebind Cloud is the hosted companion at <https://linebind-cloud.vercel.app>.
 Its GitHub check links to authenticated adopted and proposed contract evidence.
 The check is informational: do not make it a required merge gate.
 
-The CLI is free and open source. Cloud is also free during its opening phase,
-for connected public and private repositories. No card or subscription is needed,
-and there is no automatic conversion to a paid plan.
+The CLI is free and open source. Cloud is free for connected public and private
+repositories. Local checks and the agent skill work without Cloud.
 
 ## Connect GitHub
 
-Install [Linebind Cloud](https://github.com/apps/linebind-cloud/installations/new)
-on the selected repositories. An organization may require its owner's approval.
+Connect [Linebind Cloud through GitHub Marketplace](https://github.com/marketplace/linebind-cloud),
+then install the App on the selected repositories. An organization may require its owner's approval.
 GitHub returns you to your [workspace](https://linebind-cloud.vercel.app/dashboard).
-Sign in with GitHub; no separate account or payment step is needed.
+Sign in with GitHub; no separate Linebind account is needed.
 The App reads contents, pull requests and Actions metadata, and writes checks.
 It cannot push code or change repository settings. Your own repository permissions
 are checked whenever you open a private report.
 
 The workflow is public so both private and public repositories can call it.
-No Cloud, database, Stripe or GitHub App secrets are needed in your repository.
+No Cloud, database or GitHub App secrets are needed in your repository.
 
 ## Add the contract and workflow
 

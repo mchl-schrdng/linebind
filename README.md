@@ -46,8 +46,8 @@ The bundled [agent skill](#with-your-coding-agent) guides your coding agent from
 project decisions to a verifiable contract, then through repairs and deliberate
 rule changes. The CLI performs the checks; the skill helps the agent use their
 evidence. [Linebind Cloud](https://linebind-cloud.vercel.app/) adds a GitHub App
-and shared PR reports with a Free Marketplace plan. Local checks and the skill
-work without a Cloud account.
+and shared PR reports, free for public and private repositories. Local checks and
+the skill work without a Cloud account.
 
 <p align="center">
   <img src="docs/assets/mecha-banner.webp" width="100%" alt="Original panoramic Linebind illustration: an ivory mecha and its articulated hand hold a coral line across a midnight-blue background.">
@@ -191,8 +191,9 @@ Turn a decision from your conversation into a rule the next change can check.
 The bundled skill gives your existing coding agent a workflow for three tasks:
 
 - **Create a contract.** Start from decisions you have actually made, explain
-  what each rule protects, and demonstrate a violation in an isolated fixture.
-  Subjective goals without a meaningful verifier stay in human review.
+  its exact coverage and exclusions inside the contract, and demonstrate both
+  a permitted change and a violation in an isolated fixture. Subjective goals
+  without a meaningful verifier stay in human review.
 - **Develop within it.** Run the checks, read their findings, and repair
   unintended deviations in the code. The instructions explicitly forbid
   weakening a rule just to make a check pass.
@@ -219,12 +220,22 @@ and preserves existing guidance. It does not create or approve a contract.
 Reload skills or start a new agent session if needed, then ask:
 
 > Prepare a Linebind contract from our documented decisions. Explain what each
-> rule protects and what remains unchecked. Demonstrate a permitted change and
-> a violation in an isolated fixture.
+> rule checks, record its scope and exclusions in the contract, and identify
+> what remains for our tests, linters or specialist tools. Demonstrate a permitted
+> change and a violation in an isolated fixture.
 
 Linebind adds no model account or API key. The skill guides the agent; the CLI
 evaluates declared checks, and CI can run them independently. Installing a skill
 does not guarantee that an agent session loads or follows it.
+
+Keep your existing tests, linters and specialist checks. For example, a dependency
+allowlist can flag a newly declared package; tests establish behavior and security
+tools assess vulnerabilities. Linebind makes the selected project decision and its
+evidence visible alongside those tools.
+
+The [canonical skill](internal/agentsetup/skill/SKILL.md) contains the latest
+guidance. `setup` installs the bundle shipped with your executable; changes on
+`main` reach that bundle in the next release.
 
 [Agent setup, everyday workflow and compatibility limits](docs/agents.md)
 
