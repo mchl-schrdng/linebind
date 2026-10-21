@@ -5,51 +5,6 @@
   </picture>
 </p>
 
-## The tests passed. A project decision changed.
-
-You delegate the implementation. You put the constraints in a prompt or
-`AGENTS.md`. You run the tests. But when the patch comes back, you still need to
-answer: **did it solve the problem within those constraints, or change them?**
-
-There are documented examples of the latter. In a coding evaluation,
-[METR observed o3 patching the evaluator at runtime](https://metr.org/blog/2025-06-05-recent-reward-hacking/)
-with a function that reported every submission as successful. The published
-code shows the shortcut. This was an evaluation, not a production incident.
-
-Linebind does not generally detect that kind of evaluator tampering. It tackles
-a narrower question: **which project decisions can we make explicit and check
-on the next change?**
-
-We tested one on a copy of **Chi**, which documents
-[“No external dependencies”](https://github.com/go-chi/chi/blob/9f8adb1aabaa8a91180a821111d3f8e668d1c0bf/README.md#L38).
-We deliberately added `github.com/bmatcuk/doublestar/v4` and a small Go file
-importing it. The existing tests and module consistency check stayed green.
-
-| Check on the modified copy | Result |
-| --- | --- |
-| `go test -mod=readonly -count=1 ./...` | Passed |
-| `go mod tidy -diff` | Passed |
-| `linebind preview` with our proposed dependency rule | **Crossed** |
-
-```text
-Direct dependency is not permitted: github.com/bmatcuk/doublestar/v4
-```
-
-**The code compiled and the existing tests passed.
-The dependency still crossed a project boundary.**
-Our rule checked direct declarations in the root `go.mod` against an empty
-allowlist. This was our controlled experiment with a proposed contract, not a
-bug in Chi. **[Inspect and reproduce it, including a case this rule misses](examples/chi/README.md).**
-
-The **skill** helps your coding agent turn a decision into a contract: the rule,
-its reason, its exact scope and its limits. The **CLI** checks the repository
-against that contract and reports the evidence. After adoption, `check` uses
-the contract from your selected trusted base, so editing the candidate's rules
-does not silently redefine that check.
-
-Keep your tests, linters and review. Linebind checks the decisions you encode;
-it does not infer all the decisions your project needs.
-
 <p align="center">
   <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush"><img src="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="CI — main branch"></a>
   <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/codeql.yml"><img src="https://github.com/mchl-schrdng/linebind/actions/workflows/codeql.yml/badge.svg" alt="CodeQL analysis"></a>
@@ -71,6 +26,47 @@ it does not infer all the decisions your project needs.
   <a href="#with-your-coding-agent">Coding agents</a> ·
   <a href="docs/configuration.md">Configuration</a>
 </p>
+
+## The tests passed. A project decision changed.
+
+You delegate the implementation. You put the constraints in a prompt or
+`AGENTS.md`. You run the tests. But when the patch comes back, you still need to
+answer: **did it solve the problem within those constraints, or change them?**
+
+There are documented examples of the latter. In a coding evaluation,
+[METR observed o3 patching the evaluator at runtime](https://metr.org/blog/2025-06-05-recent-reward-hacking/)
+with a function that reported every submission as successful. The published
+code shows the shortcut. This was an evaluation, not a production incident.
+
+Linebind does not generally detect that kind of evaluator tampering. It tackles
+a narrower question: **which project decisions can we make explicit and check
+on the next change?**
+
+Take one decision: **no external dependencies.** In a controlled test on a
+disposable Go project, we deliberately added and imported an external package.
+The existing tests and module consistency check stayed green. A proposed
+contract with an empty direct-dependency allowlist reported the change.
+
+| Check on the modified project | Result |
+| --- | --- |
+| `go test -mod=readonly -count=1 ./...` | Passed |
+| `go mod tidy -diff` | Passed |
+| `linebind preview` with our proposed dependency rule | **Crossed** |
+
+**The code compiled and the existing tests passed.
+The dependency still crossed a project boundary.**
+Our rule checked direct declarations in the root `go.mod` against an empty
+allowlist. It does not inspect imports or the complete dependency graph.
+**[Inspect the test method, including a case this rule misses](examples/chi/README.md).**
+
+The **skill** helps your coding agent turn a decision into a contract: the rule,
+its reason, its exact scope and its limits. The **CLI** checks the repository
+against that contract and reports the evidence. After adoption, `check` uses
+the contract from your selected trusted base, so editing the candidate's rules
+does not silently redefine that check.
+
+Keep your tests, linters and review. Linebind checks the decisions you encode;
+it does not infer all the decisions your project needs.
 
 ## Get started
 
