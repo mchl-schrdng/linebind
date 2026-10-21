@@ -5,8 +5,50 @@
   </picture>
 </p>
 
-<p align="center"><strong>Keep project decisions from drifting.</strong></p>
-<p align="center">A free, open-source CLI for explicit repository rules.<br>Check a change against its trusted base. See what crossed the line.</p>
+## The tests passed. A project decision changed.
+
+You delegate the implementation. You put the constraints in a prompt or
+`AGENTS.md`. You run the tests. But when the patch comes back, you still need to
+answer: **did it solve the problem within those constraints, or change them?**
+
+There are documented examples of the latter. In a coding evaluation,
+[METR observed o3 patching the evaluator at runtime](https://metr.org/blog/2025-06-05-recent-reward-hacking/)
+with a function that reported every submission as successful. The published
+code shows the shortcut. This was an evaluation, not a production incident.
+
+Linebind does not generally detect that kind of evaluator tampering. It tackles
+a narrower question: **which project decisions can we make explicit and check
+on the next change?**
+
+We tested one on a copy of **Chi**, which documents
+[“No external dependencies”](https://github.com/go-chi/chi/blob/9f8adb1aabaa8a91180a821111d3f8e668d1c0bf/README.md#L38).
+We deliberately added `github.com/bmatcuk/doublestar/v4` and a small Go file
+importing it. The existing tests and module consistency check stayed green.
+
+| Check on the modified copy | Result |
+| --- | --- |
+| `go test -mod=readonly -count=1 ./...` | Passed |
+| `go mod tidy -diff` | Passed |
+| `linebind preview` with our proposed dependency rule | **Crossed** |
+
+```text
+Direct dependency is not permitted: github.com/bmatcuk/doublestar/v4
+```
+
+**The code compiled and the existing tests passed.
+The dependency still crossed a project boundary.**
+Our rule checked direct declarations in the root `go.mod` against an empty
+allowlist. This was our controlled experiment with a proposed contract, not a
+bug in Chi. **[Inspect and reproduce it, including a case this rule misses](examples/chi/README.md).**
+
+The **skill** helps your coding agent turn a decision into a contract: the rule,
+its reason, its exact scope and its limits. The **CLI** checks the repository
+against that contract and reports the evidence. After adoption, `check` uses
+the contract from your selected trusted base, so editing the candidate's rules
+does not silently redefine that check.
+
+Keep your tests, linters and review. Linebind checks the decisions you encode;
+it does not infer all the decisions your project needs.
 
 <p align="center">
   <a href="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush"><img src="https://github.com/mchl-schrdng/linebind/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="CI — main branch"></a>
@@ -30,30 +72,11 @@
   <a href="docs/configuration.md">Configuration</a>
 </p>
 
-A PR can pass its tests and still add an unwanted dependency, change a deployment
-setting or ship a migration without its notes. Linebind checks those explicit
-project decisions against a YAML contract stored in Git.
-
-**`check` reads the contract from the selected trusted base.** A PR cannot make
-itself pass by weakening that contract. Proposed rule changes remain visible
-for review; `preview` lets you evaluate them before adoption.
+## Get started
 
 The CLI is **free and MIT-licensed**. Native checks need only Linebind and Git:
 no account, dependency installation or model API. Results are available in the
 terminal, JSON and an offline HTML report.
-
-The bundled [agent skill](#with-your-coding-agent) guides your coding agent from
-project decisions to a verifiable contract, then through repairs and deliberate
-rule changes. The CLI performs the checks; the skill helps the agent use their
-evidence. [Linebind Cloud](https://linebind-cloud.vercel.app/) adds a GitHub App
-and shared PR reports, free for public and private repositories. Local checks and
-the skill work without a Cloud account.
-
-<p align="center">
-  <img src="docs/assets/mecha-banner.webp" width="100%" alt="Original panoramic Linebind illustration: an ivory mecha and its articulated hand hold a coral line across a midnight-blue background.">
-</p>
-
-## Get started
 
 Download the [latest release](https://github.com/mchl-schrdng/linebind/releases/latest)
 for macOS, Linux or Windows. Verify the archive, extract it and put `linebind`
@@ -80,34 +103,11 @@ your repository's review and merge process adopts it.
 dependency, fix it, then propose a deliberate contract change. Only Git and
 Linebind are required.
 
-## A frontend change in practice
+## See the evidence
 
-A feature adds jQuery to `package.json`. The project has agreed to review new
-runtime packages, so its contract identifies the dependency and explains what
-to do next. Here is the dependency rule from the report as a complete contract:
-
-```yaml
-version: 1
-name: Frontend decisions
-rules:
-  - id: runtime-dependencies
-    kind: dependencies
-    reason: Keep runtime packages deliberate and explain each new dependency.
-    scope: [package.json]
-    dependencies:
-      format: npm
-      sections: [dependencies]
-      allow: [react, react-dom]
-    remediation: Remove the accidental package or propose a contract change.
-```
-
-The rule checks declared package names. It does not judge versions,
-vulnerabilities or application behavior. Its allowlist is a project decision,
-not a universal frontend recommendation.
-
-Remove an accidental dependency and rerun the check. If the project deliberately
-needs a new package, propose the dependency and contract change together. The
-report keeps that policy change visible for review.
+The offline HTML report connects each finding to its rule, reason and next step.
+This separate frontend illustration shows four checks passing and an undeclared
+dependency crossing the boundary:
 
 <p align="center">
   <a href="docs/assets/report-v0.4.0/mac/line-mac.png">
@@ -142,6 +142,10 @@ Native checks inspect captured files without executing project code. They do
 not infer architecture, resolve complete dependency graphs or establish runtime
 correctness. External commands require installed tools and `--allow-exec`;
 their disposable execution copy **is not a sandbox**.
+
+For one dependency rule, a small CI script may be enough. Linebind provides a
+common contract and report for several decisions, including explicit policy
+changes. Use specialist tools where they already check the property you need.
 
 ## Check adopted rules. Preview proposed changes.
 
@@ -238,6 +242,10 @@ guidance. `setup` installs the bundle shipped with your executable; changes on
 `main` reach that bundle in the next release.
 
 [Agent setup, everyday workflow and compatibility limits](docs/agents.md)
+
+[Linebind Cloud](https://linebind-cloud.vercel.app/) adds a GitHub App and shared
+PR reports, free for public and private repositories. Local checks and the skill
+work without a Cloud account.
 
 ## Read the result correctly
 
