@@ -65,6 +65,39 @@ linebind preview --base "$BASE_SHA" --html .linebind/03-fixed.html
 
 Exit `0`. The implementation respects the same rule again.
 
+## Distinguish policy review from a code violation
+
+Add only a comment to the contract, leaving the manifest compliant:
+
+```sh
+printf '\n# This rule covers declarations in the root manifest.\n' >> .linebind.yml
+linebind check --base "$BASE_SHA" --agent
+```
+
+Exit `1`: the policy file changed. Starting with v0.5.2, the text report includes:
+
+```text
+Summary: required checks: 1 passed, 0 crossed, 0 unverified; policy files changed: 1.
+Next action: Review policy changes separately; use preview with the same base to evaluate the proposal, not approve it.
+```
+
+There is no rule violation to repair. Even a comment changes the policy file;
+the report's rule-definition comparison distinguishes it from a changed rule.
+Evaluate the proposal separately:
+
+```sh
+linebind preview --base "$BASE_SHA" --agent
+```
+
+Exit `0`, explicitly marked **PREVIEW / NOT APPROVED**. The comparison base
+remains fixed; your repository's review process governs adoption. Do not change
+the base or weaken a rule just to make the earlier `check` return `0`.
+
+If a required violation and incomplete verification coexist, the summary lists
+both even though exit `1` takes precedence. Advisory findings are counted
+separately and do not block the exit code. Read the detailed findings and
+diagnostics to decide the actual correction.
+
 ## Deliberately evolve the decision
 
 Suppose the maintainer now wants Zod for form validation. Change the manifest

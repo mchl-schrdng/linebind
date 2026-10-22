@@ -51,7 +51,8 @@ the contract. Do not create a commit merely to manufacture approval.
 
 Implement the requested change and run the repository's configured validation.
 Use `check` against the fixed approved base when adopted-policy evidence is needed.
-Read the checks, diagnostics, and policy changes, not just the exit code. Correct
+Read the result summary and next action when available, then the relevant checks,
+diagnostics and policy changes; several causes can coexist behind one exit code. Correct
 accidental violations in the code when the task's intended behavior can be
 preserved. Continue ordinary compliant work without requesting permission.
 

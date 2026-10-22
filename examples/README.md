@@ -23,11 +23,12 @@ It also demonstrates a case that Linebind misses and `go mod tidy` catches.
 From the Linebind checkout with Git and Go installed:
 
 ```sh
-go build -o ./bin/linebind ./cmd/linebind
-go run ./scripts/pilots -binary ./bin/linebind
+go build -o ./bin/linebind-dev ./cmd/linebind
+go run ./scripts/pilots -binary ./bin/linebind-dev
 ```
 
-On Windows, use `./bin/linebind.exe`. To exercise a release archive, pass its
+Keep `./bin/linebind` for the trusted released verifier used by this repository's
+contract workflow. On Windows, use `./bin/linebind-dev.exe`. To exercise a release archive, pass its
 extracted executable instead. `-examples /path/to/linebind/examples` selects
 the fixtures when running elsewhere. No project dependencies are installed.
 
@@ -46,7 +47,7 @@ fixtures run separately in CI; see [Contributing](../CONTRIBUTING.md).
 ## Check actual SQLite rows
 
 ```sh
-go run ./scripts/pilots -binary ./bin/linebind -data-command
+go run ./scripts/pilots -binary ./bin/linebind-dev -data-command
 ```
 
 This adds six cases using Python's standard-library `sqlite3`; no pip package or
@@ -71,7 +72,7 @@ Passing three fixture rows does not establish production data quality.
 ## Optional public snapshot
 
 ```sh
-go run ./scripts/pilots -binary ./bin/linebind -public
+go run ./scripts/pilots -binary ./bin/linebind-dev -public
 ```
 
 This explicitly fetches

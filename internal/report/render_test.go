@@ -83,6 +83,17 @@ func TestCheckTranscriptKeepsScopedEvidenceWithoutRepeatingGlobalDetails(t *test
 	if transcript("diagnostic-text") != full.String() {
 		t.Fatal("full report transcript lost evidence")
 	}
+	// Selecting a passing check must retain the other check's failure and the
+	// policy review, without copying those checks' detailed evidence.
+	passing := transcript("diagnostic-check-2")
+	for _, want := range []string{"required checks: 1 passed, 1 crossed, 0 unverified", "advisory checks: 0 passed, 0 crossed, 1 unverified", "policy files changed: 1", "Repair unintended violations", "Review policy changes separately"} {
+		if !strings.Contains(passing, want) {
+			t.Errorf("passing-check excerpt hid overall context %q", want)
+		}
+	}
+	if strings.Contains(passing, "[Crossed] client-boundary") {
+		t.Fatal("passing-check excerpt copied another check's detailed evidence")
+	}
 	excerpt := transcript("diagnostic-check-0")
 	for _, want := range []string{
 		"The header status is the overall report outcome.",
