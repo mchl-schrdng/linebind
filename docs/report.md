@@ -11,6 +11,13 @@ account or network resources. The display font and its license are embedded.
 
 ## Read the evidence
 
+Text output, including `--agent`, begins with `Summary:` and `Next action:`
+since v0.5.2. Required and advisory checks are counted separately; policy changes
+remain visible alongside violations and incomplete verification. The summary
+directs you to the detailed evidence without changing the verdict, exit code or
+JSON format. No completed checks means no success claim. For a reproducible
+policy-only change, see the [walkthrough](try-it.md#distinguish-policy-review-from-a-code-violation).
+
 The contract line gives checks stable positions in declaration order. Filled
 points pass; raised diamonds are required failures; lowered diamonds are advisory
 failures; hollow question marks mean incomplete verification. Position does not
@@ -46,8 +53,9 @@ unverified checks; **All checks** restores the full list. Direct links such as
 `#check-1` reveal the selected check even when filtered out.
 
 The global copy action includes all diagnostics. **Copy check** includes only
-the selected check with provenance and global policy warnings; preview remains
-labelled as unapproved. If clipboard access fails, the text is selected for
+the selected check with provenance and the full report's summary and next action;
+the excerpt explicitly labels that global context. Preview remains labelled as
+unapproved. If clipboard access fails, the text is selected for
 manual copying. Escape dismisses the selection.
 
 Without JavaScript, every check and policy comparison remains readable. Printing

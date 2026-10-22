@@ -101,7 +101,8 @@ func Render(w io.Writer, result model.Report) error {
 		}
 	}
 	var transcript bytes.Buffer
-	if err := Text(&transcript, result, true); err != nil {
+	summary := summaryText(result)
+	if err := writeText(&transcript, result, true, summary); err != nil {
 		return err
 	}
 	data.Transcript = transcript.String()
@@ -118,8 +119,8 @@ func Render(w io.Writer, result model.Report) error {
 			}
 		}
 		var text bytes.Buffer
-		text.WriteString("Single-check excerpt. The header status is the overall report outcome.\n")
-		if err := Text(&text, excerpt, true); err != nil {
+		text.WriteString("Single-check excerpt. The header status is the overall report outcome. Summary and next action also describe the full report; details below cover only this check.\n")
+		if err := writeText(&text, excerpt, true, summary); err != nil {
 			return err
 		}
 		data.CheckTranscripts = append(data.CheckTranscripts, text.String())
@@ -135,6 +136,12 @@ func Render(w io.Writer, result model.Report) error {
 // Text writes a compact, plain-text report. Agent mode adds the exact input and
 // contract identifiers so a copied diagnostic remains tied to its analysis.
 func Text(w io.Writer, result model.Report, agent bool) error {
+	return writeText(w, result, agent, summaryText(result))
+}
+
+// Excerpts keep the full report's summary so a selected passing check cannot
+// hide another check's violation, incomplete evidence, or policy review.
+func writeText(w io.Writer, result model.Report, agent bool, summary string) error {
 	var out bytes.Buffer
 	if result.Purpose == "preview" {
 		fmt.Fprintf(&out, "Linebind %s — PREVIEW / NOT APPROVED — %s\n", result.Version, statusLabel(result.Status))
@@ -143,6 +150,7 @@ func Text(w io.Writer, result model.Report, agent bool) error {
 		fmt.Fprintf(&out, "Linebind %s — %s\n", result.Version, statusLabel(result.Status))
 	}
 	fmt.Fprintf(&out, "Repository: %s\nComparison: %s → %s\n", result.Repository, result.Base, result.Candidate)
+	out.WriteString(summary)
 	if agent {
 		fmt.Fprintf(&out, "Contract: %s\nContract hash: %s\nInput digest: %s\n", result.ContractPath, result.ContractHash, result.InputDigest)
 		fmt.Fprintf(&out, "Captured: %s\nPolicy source: %s\n", result.GeneratedAt, policySource(result.Purpose))
@@ -208,6 +216,54 @@ func Text(w io.Writer, result model.Report, agent bool) error {
 	fmt.Fprintln(&out, "\nResults apply only to the declared checks and recorded inputs.")
 	_, err := io.WriteString(w, removeControls(out.String()))
 	return err
+}
+
+func summaryText(result model.Report) string {
+	type counts struct{ passed, crossed, unverified int }
+	var required, advisory counts
+	for _, check := range result.Checks {
+		group := &required
+		if !check.Required {
+			group = &advisory
+		}
+		switch state(check.Status) {
+		case "passed":
+			group.passed++
+		case "crossed":
+			group.crossed++
+		default:
+			group.unverified++
+		}
+	}
+	parts := []string{fmt.Sprintf("required checks: %d passed, %d crossed, %d unverified", required.passed, required.crossed, required.unverified)}
+	if len(result.Checks) == 0 {
+		parts = []string{"no checks completed"}
+	}
+	if advisory.passed+advisory.crossed+advisory.unverified > 0 {
+		parts = append(parts, fmt.Sprintf("advisory checks: %d passed, %d crossed, %d unverified", advisory.passed, advisory.crossed, advisory.unverified))
+	}
+	if len(result.Changes) > 0 {
+		parts = append(parts, fmt.Sprintf("policy files changed: %d", len(result.Changes)))
+	}
+	var actions []string
+	if required.crossed > 0 {
+		actions = append(actions, "Repair unintended violations using the findings and remediation.")
+	}
+	if required.unverified > 0 || len(result.Checks) == 0 {
+		actions = append(actions, "Resolve incomplete verification using the diagnostics.")
+	}
+	if advisory.crossed+advisory.unverified > 0 {
+		actions = append(actions, "Review advisory findings and diagnostics; they do not block the exit code.")
+	}
+	if result.Purpose == "preview" {
+		actions = append(actions, "Review the proposal; preview does not approve adoption.")
+	} else if len(result.Changes) > 0 {
+		actions = append(actions, "Review policy changes separately; use preview with the same base to evaluate the proposal, not approve it.")
+	}
+	if len(actions) == 0 {
+		actions = append(actions, "Re-run after relevant edits, keeping the comparison base fixed.")
+	}
+	return "Summary: " + strings.Join(parts, "; ") + ".\nNext action: " + strings.Join(actions, " ") + "\n"
 }
 
 func policySource(purpose string) string {

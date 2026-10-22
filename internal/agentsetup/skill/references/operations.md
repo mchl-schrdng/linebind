@@ -103,6 +103,12 @@ the base lacks a contract; `preview` can still validate it locally or in CI.
 
 ## Interpret the evidence
 
+Since v0.5.2, text reports start with `Summary:` and `Next action:`. They separate
+required and advisory results and list policy changes alongside incomplete
+verification. Use them to locate the relevant evidence below, not as permission
+to change a decision. A copied single-check excerpt keeps the full report's
+summary; only its detailed evidence is limited to the selected check.
+
 | Evidence | Meaning and response |
 | --- | --- |
 | `passed` | The declared check passed for the captured inputs and comparison mode. |

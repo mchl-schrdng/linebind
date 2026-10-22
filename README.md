@@ -107,6 +107,25 @@ Linebind are required.
 
 ## See the evidence
 
+**Know whether to repair code, resolve incomplete verification or review a
+decision.** Since v0.5.2, terminal reports begin with a summary and next action.
+They keep required checks, advisory results and policy changes separate, even
+when several issues share one exit code.
+
+For example, edit only a comment in the demo contract while its dependency
+check still passes. `check` returns `1` because the policy changed:
+
+```text
+Summary: required checks: 1 passed, 0 crossed, 0 unverified; policy files changed: 1.
+Next action: Review policy changes separately; use preview with the same base to evaluate the proposal, not approve it.
+```
+
+The next step is a policy review, with no code violation reported. A violation
+and incomplete verification would both remain visible in the summary.
+**[Reproduce this example](docs/try-it.md#distinguish-policy-review-from-a-code-violation).**
+The summary guides the next step; the findings and diagnostics below provide
+the evidence. It does not repair code or approve policy changes.
+
 The offline HTML report connects each finding to its rule, reason and next step.
 This separate frontend illustration shows four checks passing and an undeclared
 dependency crossing the boundary:

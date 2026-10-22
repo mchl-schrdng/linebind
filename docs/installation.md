@@ -58,10 +58,13 @@ To build from source, use Git and Go 1.26 or newer:
 ```sh
 git clone https://github.com/mchl-schrdng/linebind.git
 cd linebind
-go build -o ./bin/linebind ./cmd/linebind
+go build -o ./bin/linebind-dev ./cmd/linebind
 ```
 
 A source build reports `dev` unless version metadata is explicitly supplied.
+Run it as `./bin/linebind-dev` (`linebind-dev.exe` on Windows). Keep
+`./bin/linebind` available for the trusted released verifier used to check this
+repository's contract.
 Release builds use the pinned toolchain and metadata described in
 [Contributing](../CONTRIBUTING.md#release-packaging).
 
