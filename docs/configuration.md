@@ -327,6 +327,42 @@ for the execution boundary.
 Runnable recipes are provided for [dependency-cruiser](../examples/dependency-cruiser/README.md)
 and [Conftest](../examples/conftest/README.md).
 
+## Documentation and repository organization
+
+Linebind has no dedicated native rule for forbidden paths, file counts, line
+limits or byte budgets. [`require-files`](#require-files) preserves named entry
+points but permits additional files. `scope` selects inputs; it does not prohibit
+files elsewhere. [`co-change`](#co-change) requires an accompanying edit, even
+whitespace, rather than establishing its usefulness.
+
+For documentation growth, separate the decision from what can be verified:
+
+| Responsibility | Example |
+| --- | --- |
+| Agent instructions | Extend an existing guide when it covers the subject; keep temporary session reports outside the repository; explain the reader need for a new public page. |
+| Mechanical checks | Verify required files with native rules, or explicit path and size constraints with a project-owned checker. |
+| Human review | Decide whether information is useful, duplicated, accurate or better placed in another guide. |
+
+Instructions guide agents that load and follow them; they are not an executable
+gate. A file-count limit can miss duplicated prose inside an existing guide and
+can require a policy change for a useful new page. Do not remove useful
+explanations or tests just to meet a number. A byte budget tied to a distribution
+or performance constraint measures that resource, not overall code quality.
+
+A project-owned checker can enforce agreed paths or budgets through a
+[`command`](#project-commands) rule. Specify its actual measurements and
+exceptions, exercise permitted changes and violations, and apply the command's
+`policy-files` requirements to every helper and settings file controlling the
+verdict. Reuse the execution and policy-source rules above; an unlisted helper
+remains candidate content. Commands need `--allow-exec`, so they are unavailable
+in the [native-only Cloud workflow](cloud-pilot.md).
+
+The checker sees [captured inputs](trust-model.md#captured-inputs), not the full
+working directory or Git history. Ignored untracked files are excluded, and
+[capture limits](trust-model.md#capture-and-execution-limits) can prevent a
+complete check. Probe omitted inputs and new files outside the intended scope;
+a green result does not establish documentation quality.
+
 ## Compare existing debt
 
 `compare: strict` reports every current violation. Its findings have evolution

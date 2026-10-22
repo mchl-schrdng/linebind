@@ -4,6 +4,14 @@ Read the project's [Linebind skill](internal/agentsetup/skill/SKILL.md) when
 creating, checking or evolving this repository's contract. This source repository
 uses the bundled skill directly; keep its canonical content in that directory.
 
+Keep documentation focused on durable user and contributor needs. Extend an
+existing document when it already covers the subject. Keep temporary plans,
+session logs and review reports outside the repository; preserve useful lasting
+guidance in the relevant maintained document. When a new public page is needed,
+explain in the change description which reader need it serves and why an existing
+page is unsuitable, and link it from the relevant entry point. Do not discard
+useful explanations or tests merely to reduce file or line counts.
+
 Resolve `origin/main` to a full commit SHA at the start of local work and keep
 that comparison fixed. CI uses explicit pull-request base and head SHAs.
 Never substitute the candidate as its own base just to obtain a pass.

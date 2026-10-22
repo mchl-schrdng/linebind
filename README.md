@@ -164,6 +164,9 @@ not infer architecture, resolve complete dependency graphs or establish runtime
 correctness. External commands require installed tools and `--allow-exec`;
 their disposable execution copy **is not a sandbox**.
 
+For documentation growth and repository organization, see
+[what can be checked and what needs review](docs/configuration.md#documentation-and-repository-organization).
+
 For one dependency rule, a small CI script may be enough. Linebind provides a
 common contract and report for several decisions, including explicit policy
 changes. Use specialist tools where they already check the property you need.
