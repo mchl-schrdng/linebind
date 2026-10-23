@@ -69,17 +69,4 @@ example, not an OS sandbox supplied by Linebind. The runner opts into execution
 only for the five intended command cases and records the Python version.
 Passing three fixture rows does not establish production data quality.
 
-## Optional public snapshot
-
-```sh
-go run ./scripts/pilots -binary ./bin/linebind-dev -public
-```
-
-This explicitly fetches
-[p-limit at `a8a6fbec4e0e866d6d779b10889bb4f5567e70eb`](https://github.com/sindresorhus/p-limit/tree/a8a6fbec4e0e866d6d779b10889bb4f5567e70eb)
-and adds a [Linebind-authored policy](public-p-limit/.linebind.yml) preserving
-its observed ESM declaration. Four scenarios cover baseline, seeded CommonJS,
-malformed JSON and removed policy. Both the upstream snapshot and local policy
-commit are recorded. No upstream code, tests or package installation run, and
-nothing is published upstream. The policy is not endorsed by its maintainer.
-Combine `-public` and `-data-command` for all 31 scenarios.
+With `-data-command`, the suite runs 27 scenarios without fetching another repository.
