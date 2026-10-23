@@ -1,5 +1,4 @@
-// Command pilots checks synthetic fixtures and, optionally, one pinned public
-// repository through an installed Linebind binary. Upstream code is never run.
+// Command pilots checks synthetic fixtures through an installed Linebind binary.
 package main
 
 import (
@@ -21,19 +20,15 @@ import (
 	"github.com/mchl-schrdng/linebind/internal/model"
 )
 
-const upstreamURL = "https://github.com/sindresorhus/p-limit.git"
-const upstreamSHA = "a8a6fbec4e0e866d6d779b10889bb4f5567e70eb"
-
 type result struct {
-	Name           string `json:"name"`
-	Source         string `json:"source"`
-	Variant        string `json:"variant"`
-	Status         string `json:"status"`
-	ExitCode       int    `json:"exit_code"`
-	Base           string `json:"base"`
-	UpstreamCommit string `json:"upstream_commit,omitempty"`
-	Report         string `json:"report"`
-	HTML           string `json:"html"`
+	Name     string `json:"name"`
+	Source   string `json:"source"`
+	Variant  string `json:"variant"`
+	Status   string `json:"status"`
+	ExitCode int    `json:"exit_code"`
+	Base     string `json:"base"`
+	Report   string `json:"report"`
+	HTML     string `json:"html"`
 }
 
 type runner struct {
@@ -45,16 +40,15 @@ func main() {
 	binary := flag.String("binary", "", "installed or extracted Linebind binary")
 	examples := flag.String("examples", "examples", "path to this project's example fixtures")
 	out := flag.String("out", "", "new evidence directory (defaults to a retained temporary directory)")
-	public := flag.Bool("public", false, "also fetch the pinned p-limit repository; requires network access")
 	dataCommand := flag.Bool("data-command", false, "also execute the trusted SQLite fixture checker; requires python3")
 	flag.Parse()
-	if err := run(*binary, *examples, *out, *public, *dataCommand); err != nil {
+	if err := run(*binary, *examples, *out, *dataCommand); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(binary, examples, out string, public, dataCommand bool) error {
+func run(binary, examples, out string, dataCommand bool) error {
 	if binary == "" {
 		return fmt.Errorf("-binary is required")
 	}
@@ -108,11 +102,6 @@ func run(binary, examples, out string, public, dataCommand bool) error {
 		python = strings.TrimSpace(string(version))
 		if err := r.dataCommand(); err != nil {
 			return fmt.Errorf("data command fixture: %w", err)
-		}
-	}
-	if public {
-		if err := r.publicPilot(); err != nil {
-			return fmt.Errorf("public p-limit pilot: %w", err)
 		}
 	}
 	evidence := struct {
@@ -172,7 +161,7 @@ func (r *runner) fixture(name string) error {
 				return err
 			}
 		}
-		if err := r.check(name, "synthetic-fixture", variant, dir, base, hash, "", false); err != nil {
+		if err := r.check(name, "synthetic-fixture", variant, dir, base, hash, false); err != nil {
 			return err
 		}
 	}
@@ -201,75 +190,7 @@ func (r *runner) dataCommand() error {
 				return err
 			}
 		}
-		if err := r.check("data-command", "synthetic-fixture-with-trusted-checker", variant, dir, base, hash, "", variant != "exec-disabled"); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (r *runner) publicPilot() error {
-	dir := filepath.Join(r.out, "work", "p-limit")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
-	}
-	if _, err := r.git(dir, "init", "--quiet", "--initial-branch=main"); err != nil {
-		return err
-	}
-	if _, err := r.git(dir, "fetch", "--quiet", "--no-tags", "--depth=1", upstreamURL, upstreamSHA); err != nil {
-		return err
-	}
-	if _, err := r.git(dir, "checkout", "--quiet", "--detach", upstreamSHA); err != nil {
-		return err
-	}
-	actual, err := r.git(dir, "rev-parse", "HEAD")
-	if err != nil || strings.TrimSpace(string(actual)) != upstreamSHA {
-		return fmt.Errorf("upstream checkout did not resolve to the pinned SHA: %s (%v)", actual, err)
-	}
-	policy, err := os.ReadFile(filepath.Join(r.examples, "public-p-limit", ".linebind.yml"))
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(filepath.Join(dir, ".linebind.yml"), policy, 0o644); err != nil {
-		return err
-	}
-	base, hash, err := r.approve(dir)
-	if err != nil {
-		return err
-	}
-	manifest := filepath.Join(dir, "package.json")
-	original, err := os.ReadFile(manifest)
-	if err != nil {
-		return err
-	}
-	var pkg map[string]any
-	if err := json.Unmarshal(original, &pkg); err != nil {
-		return err
-	}
-	if pkg["type"] != "module" {
-		return fmt.Errorf("pinned package no longer has the expected ESM declaration")
-	}
-	pkg["type"] = "commonjs"
-	changed, err := json.MarshalIndent(pkg, "", "  ")
-	if err != nil {
-		return err
-	}
-	for _, variant := range []string{"passed", "crossed", "unverified", "contract-removed"} {
-		data := original
-		if variant == "crossed" || variant == "contract-removed" {
-			data = changed
-		} else if variant == "unverified" {
-			data = []byte(`{"type":`)
-		}
-		if err := os.WriteFile(manifest, data, 0o644); err != nil {
-			return err
-		}
-		if variant == "contract-removed" {
-			if err := os.Remove(filepath.Join(dir, ".linebind.yml")); err != nil {
-				return err
-			}
-		}
-		if err := r.check("p-limit", "public-snapshot-with-seeded-mutations", variant, dir, base, hash, upstreamSHA, false); err != nil {
+		if err := r.check("data-command", "synthetic-fixture-with-trusted-checker", variant, dir, base, hash, variant != "exec-disabled"); err != nil {
 			return err
 		}
 	}
@@ -294,7 +215,7 @@ func (r *runner) approve(dir string) (string, string, error) {
 	return strings.TrimSpace(string(base)), fmt.Sprintf("%x", sha256.Sum256(policy)), err
 }
 
-func (r *runner) check(name, source, variant, dir, base, hash, upstream string, allowExec bool) error {
+func (r *runner) check(name, source, variant, dir, base, hash string, allowExec bool) error {
 	status, code := variant, 0
 	switch variant {
 	case "repaired":
@@ -365,7 +286,7 @@ func (r *runner) check(name, source, variant, dir, base, hash, upstream string, 
 	if !bytes.Equal(originalHTML, rerendered) || !bytes.Contains(bytes.ToLower(originalHTML), []byte("<html")) {
 		return fmt.Errorf("%s/%s: report did not reproduce the original HTML", name, variant)
 	}
-	r.results = append(r.results, result{name, source, variant, status, code, base, upstream, stem + ".json", stem + ".html"})
+	r.results = append(r.results, result{name, source, variant, status, code, base, stem + ".json", stem + ".html"})
 	fmt.Printf("PASS %-14s %-18s %s (exit %d)\n", name, variant, status, code)
 	return nil
 }

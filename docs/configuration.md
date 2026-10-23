@@ -404,8 +404,18 @@ database or network service identical across runs.
 
 `required: false` makes a rule advisory without hiding its result. Contract and
 declared policy-file changes always require review, independently of a rule's
-required/advisory setting. The [README](../README.md#read-the-result-correctly)
-explains check statuses and exit codes.
+required/advisory setting. `passed` means the declared check passed; `crossed`
+reports a violation; `unverified` means verification could not be completed.
+
+| Exit | Meaning |
+| --- | --- |
+| `0` | No blocking result; advisory findings and preview policy changes can remain |
+| `1` | A required violation, or a policy change in `check` |
+| `2` | Required verification is incomplete, the contract is invalid/missing, or an operation failed |
+
+Exit `1` takes precedence when required violations and incomplete verification
+coexist. Read the summary and diagnostics, not only the exit code. A passing
+result covers the declared checks and captured inputs, not the whole repository.
 
 ```text
 linebind setup --agent codex|claude|antigravity|all [--repo DIR] [--dry-run]

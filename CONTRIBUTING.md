@@ -23,8 +23,7 @@ Add regression tests for changed behavior. Keep native diagnostics and distingui
 a failed check from a check that could not run.
 
 The [example runner](examples/README.md) can also exercise a trusted Python/SQLite
-checker with `-data-command`, or fetch one pinned public repository with
-`-public`. Neither is required to run the native examples.
+checker with `-data-command`. This is optional for local native checks.
 
 CI additionally exercises the real dependency-cruiser 17.3.8 and conftest 0.62.0
 adapters on Linux. To run those tests locally, install those exact tools and pass
@@ -38,7 +37,7 @@ LINEBIND_DEPCRUISE=/path/to/depcruise LINEBIND_CONFTEST=/path/to/conftest \
 The race detector requires a supported C toolchain. CI disables npm lifecycle
 scripts and verifies the conftest release archive against its pinned upstream
 SHA-256 before execution. These integration fixtures belong to Linebind; the
-job does not execute commands from the public p-limit pilot.
+job executes only the project's own integration fixtures.
 
 Report interaction tests use Node.js and a test-only dependency outside the checkout:
 

@@ -5,13 +5,12 @@
 The original SVG logos and wordmarks use the repository's MIT license. The
 signature colors are midnight blue `#0d1024` and coral `#d65c46`; use dark coral
 `#b94232` on white and light coral `#ed8c75` on navy. Status colors retain their
-own meanings.
+own meanings. The standalone marks are available for project avatars and
+sharing: [light background](logo.svg) and [dark background](logo-dark.svg).
 
 The report embeds Syne from Fontsource with its
 [SIL Open Font License](../../internal/report/fonts/OFL.txt); evidence uses
 system fonts. No runtime font or image request is made.
-The [mecha banner](mecha-banner.webp) is original AI-generated decorative art,
-not a product capture or evidence of a check.
 
 ## README captures
 
